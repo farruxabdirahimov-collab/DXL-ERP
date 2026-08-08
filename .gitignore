@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Muhit
+.env
+.env.local
+
+# Baza (lokal sinov)
+*.db
+*.sqlite3
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+
+# OS
+.DS_Store
+web/*.tsbuildinfo

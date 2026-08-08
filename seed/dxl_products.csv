@@ -1,0 +1,104 @@
+sku,name,category,diameter_mm,length_mm,implant_type,connection_type,price_usd,min_stock
+DXL-BL-33x8,DXL Bone Level implant 3.3x8 mm,implant,3.3,8,Bone Level,Internal hex,85.00,5
+DXL-BL-33x10,DXL Bone Level implant 3.3x10 mm,implant,3.3,10,Bone Level,Internal hex,88.00,5
+DXL-BL-33x115,DXL Bone Level implant 3.3x11.5 mm,implant,3.3,11.5,Bone Level,Internal hex,90.25,5
+DXL-BL-33x13,DXL Bone Level implant 3.3x13 mm,implant,3.3,13,Bone Level,Internal hex,92.50,5
+DXL-BL-33x15,DXL Bone Level implant 3.3x15 mm,implant,3.3,15,Bone Level,Internal hex,95.50,5
+DXL-BL-38x8,DXL Bone Level implant 3.8x8 mm,implant,3.8,8,Bone Level,Internal hex,87.00,5
+DXL-BL-38x10,DXL Bone Level implant 3.8x10 mm,implant,3.8,10,Bone Level,Internal hex,90.00,10
+DXL-BL-38x115,DXL Bone Level implant 3.8x11.5 mm,implant,3.8,11.5,Bone Level,Internal hex,92.25,10
+DXL-BL-38x13,DXL Bone Level implant 3.8x13 mm,implant,3.8,13,Bone Level,Internal hex,94.50,5
+DXL-BL-38x15,DXL Bone Level implant 3.8x15 mm,implant,3.8,15,Bone Level,Internal hex,97.50,5
+DXL-BL-43x8,DXL Bone Level implant 4.3x8 mm,implant,4.3,8,Bone Level,Internal hex,89.00,5
+DXL-BL-43x10,DXL Bone Level implant 4.3x10 mm,implant,4.3,10,Bone Level,Internal hex,92.00,10
+DXL-BL-43x115,DXL Bone Level implant 4.3x11.5 mm,implant,4.3,11.5,Bone Level,Internal hex,94.25,10
+DXL-BL-43x13,DXL Bone Level implant 4.3x13 mm,implant,4.3,13,Bone Level,Internal hex,96.50,5
+DXL-BL-43x15,DXL Bone Level implant 4.3x15 mm,implant,4.3,15,Bone Level,Internal hex,99.50,5
+DXL-BL-48x8,DXL Bone Level implant 4.8x8 mm,implant,4.8,8,Bone Level,Internal hex,91.00,5
+DXL-BL-48x10,DXL Bone Level implant 4.8x10 mm,implant,4.8,10,Bone Level,Internal hex,94.00,5
+DXL-BL-48x115,DXL Bone Level implant 4.8x11.5 mm,implant,4.8,11.5,Bone Level,Internal hex,96.25,5
+DXL-BL-48x13,DXL Bone Level implant 4.8x13 mm,implant,4.8,13,Bone Level,Internal hex,98.50,5
+DXL-BL-48x15,DXL Bone Level implant 4.8x15 mm,implant,4.8,15,Bone Level,Internal hex,101.50,5
+DXL-BL-55x8,DXL Bone Level implant 5.5x8 mm,implant,5.5,8,Bone Level,Internal hex,93.80,5
+DXL-BL-55x10,DXL Bone Level implant 5.5x10 mm,implant,5.5,10,Bone Level,Internal hex,96.80,5
+DXL-BL-55x115,DXL Bone Level implant 5.5x11.5 mm,implant,5.5,11.5,Bone Level,Internal hex,99.05,5
+DXL-BL-55x13,DXL Bone Level implant 5.5x13 mm,implant,5.5,13,Bone Level,Internal hex,101.30,5
+DXL-BL-55x15,DXL Bone Level implant 5.5x15 mm,implant,5.5,15,Bone Level,Internal hex,104.30,5
+DXL-TL-35x8,DXL Tissue Level implant 3.5x8 mm,implant,3.5,8,Tissue Level,Internal octagon,92.80,5
+DXL-TL-35x10,DXL Tissue Level implant 3.5x10 mm,implant,3.5,10,Tissue Level,Internal octagon,95.80,5
+DXL-TL-35x12,DXL Tissue Level implant 3.5x12 mm,implant,3.5,12,Tissue Level,Internal octagon,98.80,5
+DXL-TL-35x14,DXL Tissue Level implant 3.5x14 mm,implant,3.5,14,Tissue Level,Internal octagon,101.80,5
+DXL-TL-41x8,DXL Tissue Level implant 4.1x8 mm,implant,4.1,8,Tissue Level,Internal octagon,95.20,5
+DXL-TL-41x10,DXL Tissue Level implant 4.1x10 mm,implant,4.1,10,Tissue Level,Internal octagon,98.20,10
+DXL-TL-41x12,DXL Tissue Level implant 4.1x12 mm,implant,4.1,12,Tissue Level,Internal octagon,101.20,10
+DXL-TL-41x14,DXL Tissue Level implant 4.1x14 mm,implant,4.1,14,Tissue Level,Internal octagon,104.20,5
+DXL-TL-48x8,DXL Tissue Level implant 4.8x8 mm,implant,4.8,8,Tissue Level,Internal octagon,98.00,5
+DXL-TL-48x10,DXL Tissue Level implant 4.8x10 mm,implant,4.8,10,Tissue Level,Internal octagon,101.00,5
+DXL-TL-48x12,DXL Tissue Level implant 4.8x12 mm,implant,4.8,12,Tissue Level,Internal octagon,104.00,5
+DXL-TL-48x14,DXL Tissue Level implant 4.8x14 mm,implant,4.8,14,Tissue Level,Internal octagon,107.00,5
+DXL-TL-55x8,DXL Tissue Level implant 5.5x8 mm,implant,5.5,8,Tissue Level,Internal octagon,100.80,5
+DXL-TL-55x10,DXL Tissue Level implant 5.5x10 mm,implant,5.5,10,Tissue Level,Internal octagon,103.80,5
+DXL-TL-55x12,DXL Tissue Level implant 5.5x12 mm,implant,5.5,12,Tissue Level,Internal octagon,106.80,5
+DXL-TL-55x14,DXL Tissue Level implant 5.5x14 mm,implant,5.5,14,Tissue Level,Internal octagon,109.80,5
+DXL-KN-35x85,DXL Konus implant 3.5x8.5 mm,implant,3.5,8.5,Konus,Conical,99.55,5
+DXL-KN-35x10,DXL Konus implant 3.5x10 mm,implant,3.5,10,Konus,Conical,101.80,5
+DXL-KN-35x115,DXL Konus implant 3.5x11.5 mm,implant,3.5,11.5,Konus,Conical,104.05,5
+DXL-KN-35x13,DXL Konus implant 3.5x13 mm,implant,3.5,13,Konus,Conical,106.30,5
+DXL-KN-4x85,DXL Konus implant 4x8.5 mm,implant,4,8.5,Konus,Conical,101.55,5
+DXL-KN-4x10,DXL Konus implant 4x10 mm,implant,4,10,Konus,Conical,103.80,10
+DXL-KN-4x115,DXL Konus implant 4x11.5 mm,implant,4,11.5,Konus,Conical,106.05,10
+DXL-KN-4x13,DXL Konus implant 4x13 mm,implant,4,13,Konus,Conical,108.30,5
+DXL-KN-45x85,DXL Konus implant 4.5x8.5 mm,implant,4.5,8.5,Konus,Conical,103.55,5
+DXL-KN-45x10,DXL Konus implant 4.5x10 mm,implant,4.5,10,Konus,Conical,105.80,5
+DXL-KN-45x115,DXL Konus implant 4.5x11.5 mm,implant,4.5,11.5,Konus,Conical,108.05,5
+DXL-KN-45x13,DXL Konus implant 4.5x13 mm,implant,4.5,13,Konus,Conical,110.30,5
+DXL-KN-5x85,DXL Konus implant 5x8.5 mm,implant,5,8.5,Konus,Conical,105.55,5
+DXL-KN-5x10,DXL Konus implant 5x10 mm,implant,5,10,Konus,Conical,107.80,5
+DXL-KN-5x115,DXL Konus implant 5x11.5 mm,implant,5,11.5,Konus,Conical,110.05,5
+DXL-KN-5x13,DXL Konus implant 5x13 mm,implant,5,13,Konus,Conical,112.30,5
+DXL-AB-35-G1,"DXL abatment 3.5 mm, gingival 1 mm",abutment,3.5,,Abatment,Internal hex,36.00,6
+DXL-AB-35-G2,"DXL abatment 3.5 mm, gingival 2 mm",abutment,3.5,,Abatment,Internal hex,37.00,6
+DXL-AB-35-G3,"DXL abatment 3.5 mm, gingival 3 mm",abutment,3.5,,Abatment,Internal hex,38.00,6
+DXL-AB-4-G1,"DXL abatment 4 mm, gingival 1 mm",abutment,4,,Abatment,Internal hex,37.00,6
+DXL-AB-4-G2,"DXL abatment 4 mm, gingival 2 mm",abutment,4,,Abatment,Internal hex,38.00,6
+DXL-AB-4-G3,"DXL abatment 4 mm, gingival 3 mm",abutment,4,,Abatment,Internal hex,39.00,6
+DXL-AB-45-G1,"DXL abatment 4.5 mm, gingival 1 mm",abutment,4.5,,Abatment,Internal hex,38.00,6
+DXL-AB-45-G2,"DXL abatment 4.5 mm, gingival 2 mm",abutment,4.5,,Abatment,Internal hex,39.00,6
+DXL-AB-45-G3,"DXL abatment 4.5 mm, gingival 3 mm",abutment,4.5,,Abatment,Internal hex,40.00,6
+DXL-AB-5-G1,"DXL abatment 5 mm, gingival 1 mm",abutment,5,,Abatment,Internal hex,39.00,6
+DXL-AB-5-G2,"DXL abatment 5 mm, gingival 2 mm",abutment,5,,Abatment,Internal hex,40.00,6
+DXL-AB-5-G3,"DXL abatment 5 mm, gingival 3 mm",abutment,5,,Abatment,Internal hex,41.00,6
+DXL-HC-35-H2,"DXL sog'aytiruvchi vint 3.5 mm, balandlik 2 mm",healing,3.5,2,Healing cap,Internal hex,14.00,10
+DXL-HC-35-H3,"DXL sog'aytiruvchi vint 3.5 mm, balandlik 3 mm",healing,3.5,3,Healing cap,Internal hex,15.00,10
+DXL-HC-35-H4,"DXL sog'aytiruvchi vint 3.5 mm, balandlik 4 mm",healing,3.5,4,Healing cap,Internal hex,16.00,10
+DXL-HC-4-H2,"DXL sog'aytiruvchi vint 4 mm, balandlik 2 mm",healing,4,2,Healing cap,Internal hex,14.00,10
+DXL-HC-4-H3,"DXL sog'aytiruvchi vint 4 mm, balandlik 3 mm",healing,4,3,Healing cap,Internal hex,15.00,10
+DXL-HC-4-H4,"DXL sog'aytiruvchi vint 4 mm, balandlik 4 mm",healing,4,4,Healing cap,Internal hex,16.00,10
+DXL-HC-45-H2,"DXL sog'aytiruvchi vint 4.5 mm, balandlik 2 mm",healing,4.5,2,Healing cap,Internal hex,14.00,10
+DXL-HC-45-H3,"DXL sog'aytiruvchi vint 4.5 mm, balandlik 3 mm",healing,4.5,3,Healing cap,Internal hex,15.00,10
+DXL-HC-45-H4,"DXL sog'aytiruvchi vint 4.5 mm, balandlik 4 mm",healing,4.5,4,Healing cap,Internal hex,16.00,10
+DXL-HC-5-H2,"DXL sog'aytiruvchi vint 5 mm, balandlik 2 mm",healing,5,2,Healing cap,Internal hex,14.00,10
+DXL-HC-5-H3,"DXL sog'aytiruvchi vint 5 mm, balandlik 3 mm",healing,5,3,Healing cap,Internal hex,15.00,10
+DXL-HC-5-H4,"DXL sog'aytiruvchi vint 5 mm, balandlik 4 mm",healing,5,4,Healing cap,Internal hex,16.00,10
+DXL-CS-33,DXL yopqich vint 3.3 mm,cover,3.3,,Cover screw,Internal hex,6.50,15
+DXL-CS-38,DXL yopqich vint 3.8 mm,cover,3.8,,Cover screw,Internal hex,6.50,15
+DXL-CS-43,DXL yopqich vint 4.3 mm,cover,4.3,,Cover screw,Internal hex,6.50,15
+DXL-CS-48,DXL yopqich vint 4.8 mm,cover,4.8,,Cover screw,Internal hex,6.50,15
+DXL-MU-0-G1,"DXL multi-unit abatment 0°, gingival 1 mm",multiunit,,,Multi-unit,Conical,49.00,4
+DXL-MU-0-G3,"DXL multi-unit abatment 0°, gingival 3 mm",multiunit,,,Multi-unit,Conical,51.00,4
+DXL-MU-17-G1,"DXL multi-unit abatment 17°, gingival 1 mm",multiunit,,,Multi-unit,Conical,59.20,4
+DXL-MU-17-G3,"DXL multi-unit abatment 17°, gingival 3 mm",multiunit,,,Multi-unit,Conical,61.20,4
+DXL-MU-30-G1,"DXL multi-unit abatment 30°, gingival 1 mm",multiunit,,,Multi-unit,Conical,67.00,4
+DXL-MU-30-G3,"DXL multi-unit abatment 30°, gingival 3 mm",multiunit,,,Multi-unit,Conical,69.00,4
+DXL-DR-20,DXL pilot bur 2.0 mm,instrument,,,Asbob,,42.00,3
+DXL-DR-28,DXL bur 2.8 mm,instrument,,,Asbob,,45.00,3
+DXL-DR-33,DXL bur 3.3 mm,instrument,,,Asbob,,45.00,3
+DXL-DR-38,DXL bur 3.8 mm,instrument,,,Asbob,,48.00,3
+DXL-DR-43,DXL bur 4.3 mm,instrument,,,Asbob,,48.00,3
+DXL-KIT-BASIC,DXL jarrohlik to'plami (asosiy),instrument,,,Asbob,,390.00,1
+DXL-RTCH,DXL raxovik (ratchet) kaliti,instrument,,,Asbob,,120.00,2
+DXL-TRQ,DXL dinamometrik kalit,instrument,,,Asbob,,165.00,2
+DXL-BG-05,DXL suyak materiali 0.5 g,biomaterial,,,Biomaterial,,58.00,6
+DXL-BG-10,DXL suyak materiali 1.0 g,biomaterial,,,Biomaterial,,96.00,6
+DXL-MEM-1520,DXL kollagen membrana 15x20 mm,biomaterial,,,Biomaterial,,72.00,5
+DXL-MEM-2530,DXL kollagen membrana 25x30 mm,biomaterial,,,Biomaterial,,110.00,4

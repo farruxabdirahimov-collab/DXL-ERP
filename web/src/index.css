@@ -1,0 +1,195 @@
+@import 'tailwindcss';
+
+/* Telegram mavzusi bilan moslashadigan ranglar */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f2f4f7;
+  --card: #ffffff;
+  --text: #101828;
+  --muted: #667085;
+  --border: #e4e7ec;
+  --accent: #1f6feb;
+  --accent-text: #ffffff;
+  --ok: #12a150;
+  --warn: #f59e0b;
+  --danger: #e5484d;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html[data-dark='1'] {
+  --bg: #17181c;
+  --bg-soft: #212228;
+  --card: #1e2026;
+  --text: #ecedf0;
+  --muted: #9aa1ad;
+  --border: #2e3038;
+  --accent: #4d8dfd;
+  --accent-text: #0b1220;
+  --ok: #2ecc71;
+  --warn: #fbbf24;
+  --danger: #ff6b6b;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  font-size: 15px;
+  overscroll-behavior-y: none;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-soft: var(--bg-soft);
+  --color-card: var(--card);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+}
+
+/* Umumiy komponent uslublari */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:active {
+  opacity: 0.7;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: transparent;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 15px;
+  outline: none;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  white-space: nowrap;
+}
+
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.tbl th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+table.tbl td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+table.tbl tr:last-child td {
+  border-bottom: none;
+}
