@@ -10,3 +10,6 @@ apscheduler>=3.10,<4
 openpyxl>=3.1
 reportlab>=4.2
 python-multipart>=0.0.9
+# Konteynerda tizim vaqt zonalari bo'lmasligi mumkin (python:slim obrazlari) —
+# zoneinfo shu paketga tayanadi, aks holda Asia/Tashkent topilmaydi
+tzdata>=2024.1

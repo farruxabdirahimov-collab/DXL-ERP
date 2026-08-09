@@ -32,5 +32,7 @@ COPY --from=web /web/dist ./web/dist
 
 EXPOSE 8000
 
-# Railway PORT o'zgaruvchisini beradi
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers"]
+# PORT platforma tomonidan berilishi mumkin; berilmasa 8000 ishlatiladi.
+# DIQQAT: bu buyruqni `railway.json` dagi `startCommand` bilan almashtirmang —
+# u yerda zaxira qiymat bo'lmasa, PORT bo'sh bo'lganda uvicorn ishga tushmaydi.
+CMD ["sh", "-c", "echo \"DXL ERP ishga tushmoqda, port=${PORT:-8000}\" && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers"]
