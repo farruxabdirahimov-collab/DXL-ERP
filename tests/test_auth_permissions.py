@@ -141,7 +141,18 @@ def test_vrach_faqat_ozining_bolimlarini_koradi():
         "orders.view",
         "orders.create",
         "payments.view",
+        "content.view",
     }
+    # Vrach hech narsani o'zgartira olmaydi va boshqalarning ma'lumotini ko'rmaydi
+    for forbidden in (
+        "doctors.view",
+        "doctors.all",
+        "reports.view",
+        "content.manage",
+        "broadcast.send",
+        "stock.edit",
+    ):
+        assert forbidden not in doctor, forbidden
 
 
 def test_audit_faqat_rahbariyatga():
