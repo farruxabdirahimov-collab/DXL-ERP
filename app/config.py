@@ -56,6 +56,17 @@ class Settings(BaseSettings):
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
+    @field_validator("webhook_secret")
+    @classmethod
+    def _clean_secret(cls, v: str) -> str:
+        """Telegram secret_token'da faqat A-Z a-z 0-9 _ - ga ruxsat beradi.
+
+        Boshqa belgilar bo'lsa `setWebhook` xato qaytaradi va bot umuman
+        ishlamaydi — shuning uchun ularni olib tashlaymiz.
+        """
+        cleaned = "".join(ch for ch in (v or "") if ch.isalnum() or ch in "_-")
+        return cleaned[:256] if len(cleaned) >= 8 else "dxl-erp-webhook-secret"
+
     @field_validator("webapp_url")
     @classmethod
     def _strip_slash(cls, v: str) -> str:

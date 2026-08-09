@@ -226,6 +226,41 @@ async def delete_invite(
     return OkOut(ok=True, message="Taklifnoma bekor qilindi")
 
 
+@router.post("/reset-webhook")
+async def reset_webhook(
+    actor: User = Depends(require_perm(SETTINGS_MANAGE)),
+):
+    """Telegram webhook'ini qayta o'rnatadi va natijasini qaytaradi.
+
+    Bot javob bermay qolsa — deploy qilmasdan shu tugma bilan tiklash mumkin.
+    """
+    from app.bot.bot import get_bot, setup_webhook
+
+    bot = get_bot()
+    if bot is None:
+        raise HTTPException(400, "BOT_TOKEN sozlanmagan")
+
+    try:
+        await setup_webhook()
+    except Exception as exc:
+        raise HTTPException(400, f"Webhook o'rnatilmadi: {exc}") from exc
+
+    info = await bot.get_webhook_info()
+    kutilgan = f"{app_settings.webapp_url}/tg/webhook"
+    return {
+        "ok": info.url == kutilgan,
+        "webhook_url": info.url or "(bo'sh)",
+        "kutilgan_url": kutilgan,
+        "oxirgi_xato": info.last_error_message,
+        "kutayotgan_xabarlar": info.pending_update_count,
+        "message": (
+            "Webhook o'rnatildi — botga /start yozib ko'ring"
+            if info.url == kutilgan
+            else "Webhook mos kelmadi, WEBAPP_URL ni tekshiring"
+        ),
+    }
+
+
 # --------------------------------------------------------------- sozlamalar
 @router.get("/settings")
 async def read_settings(

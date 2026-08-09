@@ -4,6 +4,7 @@ import { useFxRate, useSaveSetting, useSetFxRate, useSettings } from '../api/hoo
 import { num } from '../lib/format'
 import { alertUser, haptic } from '../lib/telegram'
 import { Card, ErrorBox, Field, Loading, Screen, Section } from '../components/ui'
+import { api } from '../api/client'
 
 export default function SettingsPage() {
   const can = useCan()
@@ -13,6 +14,7 @@ export default function SettingsPage() {
   const setFx = useSetFxRate()
 
   const [values, setValues] = useState<Record<string, string>>({})
+  const [botBusy, setBotBusy] = useState(false)
   const [rate, setRate] = useState('')
 
   useEffect(() => {
@@ -68,8 +70,35 @@ export default function SettingsPage() {
     }
   }
 
+  async function resetWebhook() {
+    setBotBusy(true)
+    try {
+      const result = await api.post<{ ok: boolean; message: string; webhook_url: string }>(
+        '/admin/reset-webhook',
+      )
+      haptic(result.ok ? 'success' : 'error')
+      alertUser(`${result.message}\n\n${result.webhook_url}`)
+    } catch (err) {
+      alertUser(err instanceof Error ? err.message : 'Xatolik')
+    } finally {
+      setBotBusy(false)
+    }
+  }
+
   return (
     <Screen title="Sozlamalar" subtitle="Tizim qoidalari va valyuta kursi">
+      <Section title="Telegram bot">
+        <Card>
+          <p className="mb-3 text-[13px] text-[var(--muted)]">
+            Bot xabarlarga javob bermay qolsa, aloqani shu yerdan tiklang.
+            Deploy qilish shart emas.
+          </p>
+          <button className="btn w-full" disabled={botBusy} onClick={resetWebhook}>
+            {botBusy ? 'Tekshirilmoqda…' : '🔄 Bot aloqasini tiklash'}
+          </button>
+        </Card>
+      </Section>
+
       {can('fx.edit') ? (
         <Section title="Valyuta kursi">
           <Card>
