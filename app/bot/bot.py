@@ -89,13 +89,37 @@ async def setup_webhook() -> None:
         log.warning("BOT_TOKEN sozlanmagan — bot ishga tushmadi")
         return
     url = f"{settings.webapp_url}/tg/webhook"
+    if not url.startswith("https://"):
+        log.error(
+            "WEBAPP_URL https:// bilan boshlanishi shart — Telegram boshqasini "
+            "qabul qilmaydi. Hozirgi qiymat: %s",
+            settings.webapp_url,
+        )
+
     await bot.set_webhook(
         url=url,
         secret_token=settings.webhook_secret,
         drop_pending_updates=True,
         allowed_updates=["message", "callback_query", "my_chat_member"],
     )
-    log.info("Telegram webhook o'rnatildi: %s", url)
+
+    # Telegram haqiqatan ham qabul qilganini tekshiramiz
+    info = await bot.get_webhook_info()
+    if info.url == url:
+        log.info("Telegram webhook o'rnatildi: %s", url)
+    else:
+        log.error(
+            "Webhook mos kelmadi! Telegram'da: «%s», kutilgan: «%s». "
+            "WEBAPP_URL ni Railway bergan domenga to'g'rilang.",
+            info.url or "(bo'sh)",
+            url,
+        )
+    if info.last_error_message:
+        log.error(
+            "Telegram webhook'ga yeta olmayapti: %s (%s)",
+            info.last_error_message,
+            info.last_error_date,
+        )
 
 
 async def close_bot() -> None:

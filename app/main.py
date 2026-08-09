@@ -168,6 +168,14 @@ async def _bootstrap() -> None:
     aks holda platformaning healthcheck'i konteynerni o'lik deb hisoblaydi.
     """
     try:
+        await _bootstrap_steps()
+    except Exception as exc:  # fon vazifasidagi xato jimgina yo'qolmasligi kerak
+        STATE["error"] = f"Ishga tushishda kutilmagan xato: {exc}"
+        log.exception("Ishga tushish jarayoni to'xtadi")
+
+
+async def _bootstrap_steps() -> None:
+    try:
         await asyncio.wait_for(_prepare_database(), timeout=DB_STARTUP_TIMEOUT)
         STATE["db"] = "tayyor"
     except asyncio.TimeoutError:
