@@ -156,6 +156,11 @@ async def create_invite(
         new={"role": payload.role.value, "full_name": payload.full_name},
     )
 
+    return _with_link(invite)
+
+
+def _with_link(invite: Invite) -> InviteOut:
+    """Taklifnomaga bosiladigan havola qo'shadi."""
     from app.bot.bot import bot_username
 
     out = InviteOut.model_validate(invite)
@@ -163,7 +168,7 @@ async def create_invite(
     out.link = (
         f"https://t.me/{username}?start=inv_{invite.token}"
         if username
-        else f"Botga yuboring: /start inv_{invite.token}"
+        else f"/start inv_{invite.token}"
     )
     return out
 
@@ -173,12 +178,13 @@ async def list_invites(
     session: AsyncSession = Depends(get_session),
     _: User = Depends(require_perm(USERS_MANAGE)),
 ):
+    """Ishlatilmagan taklifnomalar — har birida tayyor havola bilan."""
     rows = (
         await session.execute(
             select(Invite).where(Invite.used_at.is_(None)).order_by(Invite.id.desc())
         )
     ).scalars().all()
-    return rows
+    return [_with_link(invite) for invite in rows]
 
 
 @router.post("/seed-catalog", response_model=OkOut)

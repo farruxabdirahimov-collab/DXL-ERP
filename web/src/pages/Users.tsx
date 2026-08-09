@@ -6,6 +6,7 @@ import { alertUser, haptic } from '../lib/telegram'
 import {
   Card,
   Chip,
+  CopyLink,
   Empty,
   ErrorBox,
   Field,
@@ -46,6 +47,11 @@ export default function Users() {
   const { data: invites } = useInvites()
   const createInvite = useCreateInvite()
   const saveUser = useSaveUser()
+
+  const [createdLink, setCreatedLink] = useState<string | null>(null)
+  const [shownInvite, setShownInvite] = useState<{ name: string; link: string } | null>(
+    null,
+  )
 
   const [form, setForm] = useState<{
     full_name: string
@@ -176,7 +182,12 @@ export default function Users() {
               title={invite.full_name}
               subtitle={`${ROLE_LABELS[invite.role as Role]} · amal qiladi ${shortDate(invite.expires_at)}`}
               right="📋"
-              onClick={() => alertUser(invite.link ?? invite.token)}
+              onClick={() =>
+                setShownInvite({
+                  name: invite.full_name,
+                  link: invite.link ?? invite.token,
+                })
+              }
             />
           ))}
           {!invites?.length ? <Empty text="Faol taklifnoma yo‘q" /> : null}
@@ -236,6 +247,28 @@ export default function Users() {
         >
           {createInvite.isPending ? 'Yaratilmoqda…' : 'Taklif havolasini yaratish'}
         </button>
+      </Sheet>
+
+      {/* Yangi yaratilgan havola */}
+      <Sheet
+        open={Boolean(createdLink)}
+        title="Taklif havolasi tayyor"
+        onClose={() => setCreatedLink(null)}
+      >
+        <p className="mb-3 text-[13px] text-[var(--muted)]">
+          Shu havolani xodimga yuboring. U havolani bosgach avtomatik ro'yxatdan
+          o'tadi — parol yoki qo'shimcha ro'yxatdan o'tish kerak emas.
+        </p>
+        {createdLink ? <CopyLink url={createdLink} /> : null}
+      </Sheet>
+
+      {/* Ro'yxatdan tanlangan havola */}
+      <Sheet
+        open={Boolean(shownInvite)}
+        title={shownInvite?.name ?? ''}
+        onClose={() => setShownInvite(null)}
+      >
+        {shownInvite ? <CopyLink url={shownInvite.link} label="Taklif havolasi" /> : null}
       </Sheet>
 
       {/* Tahrirlash */}

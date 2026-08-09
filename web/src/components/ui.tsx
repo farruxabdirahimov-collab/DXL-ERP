@@ -1,5 +1,60 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { num, pct, planColor } from '../lib/format'
+
+export function CopyLink({ url, label }: { url: string; label?: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      // Ba'zi qurilmalarda clipboard yopiq — eski usulga qaytamiz
+      const area = document.createElement('textarea')
+      area.value = url
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      try {
+        document.execCommand('copy')
+      } catch {
+        /* qo'lda belgilab olishadi */
+      }
+      area.remove()
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div>
+      {label ? <label className="label">{label}</label> : null}
+      <input
+        className="input mb-2 text-[13px]"
+        value={url}
+        readOnly
+        onFocus={(e) => e.currentTarget.select()}
+        onClick={(e) => e.currentTarget.select()}
+      />
+      <div className="flex gap-2">
+        <button className="btn btn-primary flex-1" onClick={copy}>
+          {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
+        </button>
+        <a
+          className="btn flex-1"
+          href={`https://t.me/share/url?url=${encodeURIComponent(url)}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          ➤ Yuborish
+        </a>
+      </div>
+      <div className="mt-2 text-[12px] text-[var(--muted)]">
+        Nusxalash ishlamasa — maydonni bosib, matnni belgilab qo'lda oling.
+      </div>
+    </div>
+  )
+}
 
 export function Screen({
   title,
