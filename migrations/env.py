@@ -43,7 +43,15 @@ def _do_run_migrations(connection) -> None:
 
 
 async def _run_async_migrations() -> None:
-    engine = create_async_engine(settings.database_url, poolclass=None)
+    # Baza javob bermasa cheksiz kutmaslik uchun ulanish vaqti cheklanadi
+    connect_args = (
+        {"timeout": 10, "command_timeout": 120}
+        if "asyncpg" in settings.database_url
+        else {}
+    )
+    engine = create_async_engine(
+        settings.database_url, poolclass=None, connect_args=connect_args
+    )
     async with engine.connect() as connection:
         await connection.run_sync(_do_run_migrations)
     await engine.dispose()

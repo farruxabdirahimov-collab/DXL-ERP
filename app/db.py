@@ -13,11 +13,18 @@ from sqlalchemy.ext.asyncio import (
 
 from app.config import settings
 
+#: asyncpg uchun ulanish cheklovi — baza javob bermasa cheksiz kutib qolmaslik uchun
+_CONNECT_ARGS: dict = {}
+if "asyncpg" in settings.database_url:
+    _CONNECT_ARGS = {"timeout": 10, "command_timeout": 60}
+
 engine = create_async_engine(
     settings.database_url,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    pool_timeout=30,
+    connect_args=_CONNECT_ARGS,
     echo=False,
 )
 

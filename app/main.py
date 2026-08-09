@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -25,6 +26,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIST = BASE_DIR / settings.web_dist
 
 
+#: Ishga tushish bosqichlari holati — `/api/health` va `/api/ready` shundan o'qiydi
+STATE: dict[str, object] = {
+    "db": "kutilmoqda",
+    "bot": "kutilmoqda",
+    "scheduler": "kutilmoqda",
+    "ready": False,
+    "error": None,
+}
+
+#: Bazaga ulanish va migratsiya uchun eng ko'p kutish vaqti
+DB_STARTUP_TIMEOUT = 90
+#: Telegram bilan bog'lanish uchun eng ko'p kutish vaqti
+BOT_STARTUP_TIMEOUT = 30
+
+
 async def _run_migrations() -> None:
     """Ishga tushishda sxemani yangilaydi."""
     from alembic import command
@@ -34,8 +50,6 @@ async def _run_migrations() -> None:
     cfg.set_main_option("script_location", str(BASE_DIR / "migrations"))
     cfg.set_main_option("sqlalchemy.url", settings.database_url)
 
-    import asyncio
-
     def _upgrade() -> None:
         command.upgrade(cfg, "head")
 
@@ -43,25 +57,41 @@ async def _run_migrations() -> None:
     log.info("Migratsiyalar qo'llandi")
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+async def _prepare_database() -> None:
+    """Migratsiya + boshlang'ich sozlamalar. Sekin bo'lishi mumkin."""
     if settings.auto_migrate:
-        try:
-            await _run_migrations()
-        except Exception:
-            log.exception("Migratsiya xatosi — ilova baribir ishga tushmoqda")
+        await _run_migrations()
 
     from app.db import session_scope
     from app.services.settings_service import ensure_defaults
+    from app.services.stock import main_warehouse
 
+    async with session_scope() as session:
+        await ensure_defaults(session)
+        await main_warehouse(session)
+
+
+async def _bootstrap() -> None:
+    """Server so'rovlarni qabul qila boshlagandan KEYIN fonda bajariladi.
+
+    Bazaga yoki Telegram'ga ulanish sekin bo'lsa ham `/api/health` javob beraveradi —
+    aks holda platformaning healthcheck'i konteynerni o'lik deb hisoblaydi.
+    """
     try:
-        async with session_scope() as session:
-            await ensure_defaults(session)
-            from app.services.stock import main_warehouse
-
-            await main_warehouse(session)
-    except Exception:
-        log.exception("Boshlang'ich sozlamalarni yaratishda xato")
+        await asyncio.wait_for(_prepare_database(), timeout=DB_STARTUP_TIMEOUT)
+        STATE["db"] = "tayyor"
+    except asyncio.TimeoutError:
+        STATE["db"] = "xato: bazaga ulanib bo'lmadi (vaqt tugadi)"
+        STATE["error"] = (
+            "DATABASE_URL tekshiring: baza xosti javob bermayapti. "
+            "Railway'da PostgreSQL servisi ulanganmi va o'zgaruvchi to'g'rimi?"
+        )
+        log.error("Bazaga %s soniyada ulanib bo'lmadi — DATABASE_URL ni tekshiring",
+                  DB_STARTUP_TIMEOUT)
+    except Exception as exc:
+        STATE["db"] = f"xato: {exc}"
+        STATE["error"] = str(exc)
+        log.exception("Bazani tayyorlashda xato")
 
     if settings.seed_demo:
         try:
@@ -71,22 +101,47 @@ async def lifespan(app: FastAPI):
         except Exception:
             log.exception("Demo ma'lumot yuklanmadi")
 
-    from app.bot.bot import close_bot, fetch_bot_username, setup_webhook
+    from app.bot.bot import fetch_bot_username, setup_webhook
 
-    try:
-        await fetch_bot_username()
-        await setup_webhook()
-    except Exception:
-        log.exception("Telegram webhook o'rnatilmadi")
+    if not settings.bot_token:
+        STATE["bot"] = "o'chirilgan: BOT_TOKEN sozlanmagan"
+        log.warning("BOT_TOKEN sozlanmagan — bot va bildirishnomalar ishlamaydi")
+    else:
+        try:
+            await asyncio.wait_for(fetch_bot_username(), timeout=BOT_STARTUP_TIMEOUT)
+            await asyncio.wait_for(setup_webhook(), timeout=BOT_STARTUP_TIMEOUT)
+            STATE["bot"] = "tayyor"
+        except asyncio.TimeoutError:
+            STATE["bot"] = "xato: Telegram javob bermadi"
+            log.error("Telegram bilan bog'lanib bo'lmadi (vaqt tugadi)")
+        except Exception as exc:
+            STATE["bot"] = f"xato: {exc}"
+            log.exception("Telegram webhook o'rnatilmadi")
 
-    from app.jobs.scheduler import start_scheduler, stop_scheduler
+    from app.jobs.scheduler import start_scheduler
 
     try:
         start_scheduler()
-    except Exception:
+        STATE["scheduler"] = "tayyor"
+    except Exception as exc:
+        STATE["scheduler"] = f"xato: {exc}"
         log.exception("Scheduler ishga tushmadi")
 
+    STATE["ready"] = STATE["db"] == "tayyor"
+    log.info("Ishga tushish yakunlandi: %s", STATE)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Sekin ishlarni fonga qo'yamiz — server darhol so'rov qabul qila boshlaydi
+    task = asyncio.create_task(_bootstrap())
+
     yield
+
+    task.cancel()
+
+    from app.bot.bot import close_bot
+    from app.jobs.scheduler import stop_scheduler
 
     stop_scheduler()
     await close_bot()
@@ -113,7 +168,24 @@ app.include_router(api_router, prefix=settings.api_prefix)
 
 @app.get("/api/health")
 async def health() -> dict:
-    return {"ok": True, "version": __version__, "tz": settings.tz}
+    """Platformaning healthcheck'i. Har doim 200 qaytaradi.
+
+    Baza yoki Telegram bilan muammo bo'lsa ham konteyner o'ldirilmasligi kerak —
+    muammo `state` ichida ko'rinadi va loglarga yoziladi.
+    """
+    return {
+        "ok": True,
+        "version": __version__,
+        "tz": settings.tz,
+        "state": dict(STATE),
+    }
+
+
+@app.get("/api/ready")
+async def ready() -> JSONResponse:
+    """Batafsil tayyorlik holati (baza ulanmagan bo'lsa 503)."""
+    payload = {"version": __version__, **STATE}
+    return JSONResponse(payload, status_code=200 if STATE["ready"] else 503)
 
 
 @app.post("/tg/webhook")
