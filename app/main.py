@@ -35,8 +35,9 @@ STATE: dict[str, object] = {
     "error": None,
 }
 
-#: Bazaga ulanish va migratsiya uchun eng ko'p kutish vaqti
-DB_STARTUP_TIMEOUT = 90
+#: Bazaga ulanish va migratsiya uchun eng ko'p kutish vaqti.
+#: Qayta urinishlar va migratsiya shu ichiga sig'ishi kerak (healthcheck kutmaydi).
+DB_STARTUP_TIMEOUT = 240
 #: Telegram bilan bog'lanish uchun eng ko'p kutish vaqti
 BOT_STARTUP_TIMEOUT = 30
 
@@ -74,6 +75,12 @@ async def _try_connect(url: str) -> str | None:
         await probe.dispose()
 
 
+#: Ichki tarmoq konteyner ishga tushgandan keyin bir necha soniya kechikadi —
+#: shuning uchun asosiy manzilga bir necha marta urinamiz
+DB_RETRIES = 6
+DB_RETRY_DELAY = 5
+
+
 async def _select_database() -> None:
     """Ichki manzil ishlamasa, `DATABASE_PUBLIC_URL` zaxirasiga o'tadi."""
     from app import db as db_module
@@ -81,9 +88,19 @@ async def _select_database() -> None:
     primary = settings.database_url
     log.info("Bazaga ulanmoqda: %s", db_host(primary))
 
-    error = await _try_connect(primary)
-    if error is None:
-        return
+    error = None
+    for attempt in range(1, DB_RETRIES + 1):
+        error = await _try_connect(primary)
+        if error is None:
+            if attempt > 1:
+                log.info("Baza %s-urinishda ulandi", attempt)
+            return
+        if attempt < DB_RETRIES:
+            log.warning(
+                "Baza ulanmadi (%s/%s): %s — %s soniyadan keyin qayta urinamiz",
+                attempt, DB_RETRIES, error, DB_RETRY_DELAY,
+            )
+            await asyncio.sleep(DB_RETRY_DELAY)
 
     log.error("Baza manzili ishlamadi (%s): %s", db_host(primary), error)
 
