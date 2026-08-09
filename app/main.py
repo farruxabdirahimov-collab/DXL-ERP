@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.api import api_router
-from app.config import db_host, settings
+from app.config import db_host, is_placeholder_db, settings
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -86,6 +86,19 @@ async def _select_database() -> None:
     from app import db as db_module
 
     primary = settings.database_url
+
+    # Eng ko'p uchraydigan xato: `.env.example` dagi namuna qiymat ko'chirilgan
+    if is_placeholder_db(primary):
+        hint = (
+            f"DATABASE_URL da namuna qiymat qolib ketgan («{db_host(primary)}»). "
+            "Railway'da Variables -> DATABASE_URL qiymatini "
+            "${{Postgres.DATABASE_URL}} qilib qo'ying (qo'lda yozmang, "
+            "Railway taklif qilgan ro'yxatdan tanlang)."
+        )
+        STATE["db_hint"] = hint
+        log.error("%s", hint)
+        raise RuntimeError(hint)
+
     log.info("Bazaga ulanmoqda: %s", db_host(primary))
 
     error = None

@@ -59,7 +59,11 @@ class Settings(BaseSettings):
     @field_validator("webapp_url")
     @classmethod
     def _strip_slash(cls, v: str) -> str:
-        return v.rstrip("/")
+        v = v.strip().rstrip("/")
+        # Telegram faqat https:// manzilni qabul qiladi — sxema unutilgan bo'lsa qo'shamiz
+        if v and not v.startswith(("http://", "https://")):
+            v = f"https://{v}"
+        return v
 
     @property
     def timezone(self) -> ZoneInfo:
@@ -86,6 +90,16 @@ def db_host(url: str) -> str:
     if "@" in tail:
         tail = tail.split("@", 1)[1]
     return tail.split("?", 1)[0]
+
+
+#: `.env.example` dan ko'chirilgan namuna qiymatlar — bular haqiqiy xost emas
+PLACEHOLDER_HOSTS = {"host", "hostname", "localhost", "127.0.0.1", "db", "postgres_host"}
+
+
+def is_placeholder_db(url: str) -> bool:
+    """DATABASE_URL haqiqiy manzilmi yoki namuna matn qolib ketganmi."""
+    host = db_host(url).split(":", 1)[0].split("/", 1)[0].strip("<>")
+    return host.lower() in PLACEHOLDER_HOSTS
 
 
 @lru_cache
