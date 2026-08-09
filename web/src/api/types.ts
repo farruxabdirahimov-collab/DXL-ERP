@@ -14,6 +14,7 @@ export interface Me {
   phone: string | null
   role: Role
   role_label: string
+  extra_roles: Role[]
   is_active: boolean
   has_own_stock: boolean
   permissions: string[]
@@ -270,6 +271,7 @@ export interface UserRow {
   full_name: string
   phone: string | null
   role: Role
+  extra_roles: Role[]
   is_active: boolean
   has_own_stock: boolean
   created_at: string

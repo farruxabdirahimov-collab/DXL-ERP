@@ -96,7 +96,9 @@ async def create_user(
         if exists is not None:
             raise HTTPException(409, "Bu Telegram ID allaqachon ro'yxatdan o'tgan")
 
-    user = User(**payload.model_dump(), is_active=True, created_by_id=actor.id)
+    data = payload.model_dump()
+    data["extra_roles"] = [r.value for r in payload.extra_roles if r is not payload.role]
+    user = User(**data, is_active=True, created_by_id=actor.id)
     session.add(user)
     await session.flush()
 
@@ -121,6 +123,11 @@ async def update_user(
         raise HTTPException(400, "O'zingizni faolsizlantira olmaysiz")
 
     changes = payload.model_dump(exclude_unset=True)
+    if changes.get("extra_roles") is not None:
+        primary = changes.get("role") or user.role
+        changes["extra_roles"] = [
+            r.value for r in payload.extra_roles or [] if r is not primary
+        ]
     old = {key: getattr(user, key) for key in changes}
     for key, value in changes.items():
         setattr(user, key, value)
@@ -146,6 +153,7 @@ async def create_invite(
         full_name=payload.full_name,
         phone=payload.phone,
         has_own_stock=payload.has_own_stock,
+        extra_roles=[r.value for r in payload.extra_roles if r is not payload.role],
         expires_at=utcnow() + timedelta(days=payload.valid_days),
         created_by_id=actor.id,
     )

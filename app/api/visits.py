@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user, require_perm
 from app.db import get_session
 from app.models import Doctor, Role, User, Visit, utcnow
-from app.permissions import VISITS_ALL, VISITS_OWN, can
+from app.permissions import VISITS_ALL, VISITS_OWN, doctor_scope, user_can
 from app.schemas import VisitIn, VisitOut
 from app.services.reports import day_bounds
 from app.services.settings_service import get_setting
@@ -27,13 +27,13 @@ async def check_in(
     user: User = Depends(get_current_user),
 ):
     """Klinikaga kelganda «tashrif» tugmasi — joylashuv va vaqt yoziladi."""
-    if not (can(user.role, VISITS_OWN) or can(user.role, VISITS_ALL)):
+    if not (user_can(user, VISITS_OWN) or user_can(user, VISITS_ALL)):
         raise HTTPException(403, "Tashrif qayd etishga ruxsat yo'q")
 
     doctor = await session.get(Doctor, payload.doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
-    if user.role is Role.AGENT and doctor.agent_id != user.id:
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
         raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
 
     distance = None
@@ -71,11 +71,11 @@ async def list_visits(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    if not (can(user.role, VISITS_OWN) or can(user.role, VISITS_ALL)):
+    if not (user_can(user, VISITS_OWN) or user_can(user, VISITS_ALL)):
         raise HTTPException(403, "Ruxsat yo'q")
 
     stmt = select(Visit).order_by(Visit.created_at.desc()).limit(limit)
-    if not can(user.role, VISITS_ALL):
+    if not user_can(user, VISITS_ALL):
         stmt = stmt.where(Visit.agent_id == user.id)
     elif agent_id is not None:
         stmt = stmt.where(Visit.agent_id == agent_id)
@@ -104,7 +104,7 @@ async def today_summary(
     user: User = Depends(get_current_user),
 ):
     """Direktor uchun: bugun kim nechta tashrif qildi va qaysilari 'joyida' edi."""
-    if not can(user.role, VISITS_ALL):
+    if not user_can(user, VISITS_ALL):
         raise HTTPException(403, "Ruxsat yo'q")
 
     from app.services.fx import today_local

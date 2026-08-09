@@ -21,7 +21,13 @@ from app.models import (
     User,
     utcnow,
 )
-from app.permissions import DOCTORS_ALL, DOCTORS_EDIT, DOCTORS_VIEW, can
+from app.permissions import (
+    DOCTORS_ALL,
+    DOCTORS_EDIT,
+    DOCTORS_VIEW,
+    doctor_scope,
+    user_can,
+)
 from app.schemas import (
     ApproveRequestIn,
     DoctorIn,
@@ -42,8 +48,9 @@ router = APIRouter(prefix="/doctors", tags=["doctors"])
 
 def _scope(stmt, user: User):
     """Agent faqat o'ziga biriktirilgan vrachlarni ko'radi."""
-    if user.role is Role.AGENT and not can(user.role, DOCTORS_ALL):
-        return stmt.where(Doctor.agent_id == user.id)
+    scope = doctor_scope(user)
+    if scope is not None:
+        return stmt.where(Doctor.agent_id == scope)
     return stmt
 
 
@@ -74,7 +81,7 @@ async def list_doctors(
 ):
     stmt = select(Doctor).where(Doctor.is_active.is_(True))
     stmt = _scope(stmt, user)
-    if agent_id and can(user.role, DOCTORS_ALL):
+    if agent_id and user_can(user, DOCTORS_ALL):
         stmt = stmt.where(Doctor.agent_id == agent_id)
     if category:
         stmt = stmt.where(Doctor.category == category)
@@ -280,7 +287,7 @@ async def get_doctor(
     doctor = await session.get(Doctor, doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
-    if user.role is Role.AGENT and doctor.agent_id != user.id:
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
         raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
     return await _to_out(session, doctor)
 
@@ -295,7 +302,7 @@ async def doctor_debt(
     doctor = await session.get(Doctor, doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
-    if user.role is Role.AGENT and doctor.agent_id != user.id:
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
         raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
 
     summary = await debt_service.doctor_debt(session, doctor_id)
@@ -373,7 +380,7 @@ async def update_doctor(
     doctor = await session.get(Doctor, doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
-    if user.role is Role.AGENT and doctor.agent_id != user.id:
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
         raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
 
     changes = payload.model_dump(exclude_unset=True, exclude_none=True)

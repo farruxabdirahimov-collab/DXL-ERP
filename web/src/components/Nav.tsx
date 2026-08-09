@@ -8,7 +8,28 @@ export interface NavItem {
 }
 
 /** Rolga qarab pastki menyu (eng ko'p 5 ta bo'lim). */
+const EXTRA_ITEMS: Record<string, NavItem> = {
+  warehouse: { to: '/stock', label: 'Ombor', icon: '📦' },
+  accountant: { to: '/debts', label: 'Qarzlar', icon: '💳' },
+  agent: { to: '/doctors', label: 'Vrachlar', icon: '🧑‍⚕️' },
+  director: { to: '/reports', label: 'Hisobot', icon: '📈' },
+}
+
+/** Asosiy rol menyuni belgilaydi, qo'shimcha rollar unga qo'shiladi. */
 export function navFor(me: Me): NavItem[] {
+  const base = baseNavFor(me)
+  if (!me.extra_roles?.length) return base
+
+  const items = base.filter((item) => item.to !== '/more')
+  for (const role of me.extra_roles) {
+    const extra = EXTRA_ITEMS[role]
+    if (extra && !items.some((item) => item.to === extra.to)) items.push(extra)
+  }
+  // Pastki menyuda eng ko'pi 5 ta joy bor, oxirgisi doim "Yana"
+  return [...items.slice(0, 4), { to: '/more', label: 'Yana', icon: '☰' }]
+}
+
+function baseNavFor(me: Me): NavItem[] {
   switch (me.role) {
     case 'doctor':
       return [

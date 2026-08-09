@@ -25,7 +25,13 @@ from app.models import (
     User,
     utcnow,
 )
-from app.permissions import BROADCAST_SEND, CONTENT_MANAGE, CONTENT_VIEW, can
+from app.permissions import (
+    BROADCAST_SEND,
+    CONTENT_MANAGE,
+    CONTENT_VIEW,
+    doctor_scope,
+    user_can,
+)
 from app.schemas import (
     BroadcastIn,
     BroadcastOut,
@@ -59,7 +65,7 @@ async def list_posts(
 ):
     """Materiallar ro'yxati. Vrachlar faqat e'lon qilinganlarini ko'radi."""
     stmt = select(Post).order_by(Post.published_at.desc().nullslast(), Post.id.desc())
-    if not can(user.role, CONTENT_MANAGE):
+    if not user_can(user, CONTENT_MANAGE):
         stmt = stmt.where(Post.is_published.is_(True))
     if kind is not None:
         stmt = stmt.where(Post.kind == kind)
@@ -80,7 +86,7 @@ async def get_post(
     post = await session.get(Post, post_id)
     if post is None:
         raise HTTPException(404, "Material topilmadi")
-    if not post.is_published and not can(user.role, CONTENT_MANAGE):
+    if not post.is_published and not user_can(user, CONTENT_MANAGE):
         raise HTTPException(404, "Material topilmadi")
 
     post.views += 1
@@ -181,8 +187,9 @@ async def _resolve_audience(
         stmt = stmt.where(Doctor.id.in_(debtor_ids))
 
     # Agent faqat o'z vrachlariga yubora oladi
-    if actor.role is Role.AGENT:
-        stmt = stmt.where(Doctor.agent_id == actor.id)
+    scope = doctor_scope(actor)
+    if scope is not None:
+        stmt = stmt.where(Doctor.agent_id == scope)
 
     doctors = (await session.execute(stmt)).scalars().all()
     users: list[User] = []
@@ -266,7 +273,7 @@ async def list_broadcasts(
     user: User = Depends(require_perm(BROADCAST_SEND)),
 ):
     stmt = select(Broadcast).order_by(Broadcast.id.desc()).limit(limit)
-    if user.role is Role.AGENT:
+    if doctor_scope(user) is not None:
         stmt = stmt.where(Broadcast.created_by_id == user.id)
     rows = (await session.execute(stmt)).scalars().all()
 

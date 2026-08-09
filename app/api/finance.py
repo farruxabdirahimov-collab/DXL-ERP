@@ -14,6 +14,7 @@ from app.db import get_session
 from app.models import Doctor, Order, Payment, Role, User
 from app.permissions import (
     FX_EDIT,
+    doctor_scope,
     PAYMENTS_CREATE,
     PAYMENTS_VIEW,
     RETURNS_CREATE,
@@ -73,7 +74,7 @@ async def list_payments(
     user: User = Depends(require_perm(PAYMENTS_VIEW)),
 ):
     stmt = select(Payment).order_by(Payment.paid_at.desc()).limit(limit).offset(offset)
-    if user.role is Role.AGENT:
+    if doctor_scope(user) is not None:
         stmt = stmt.where(Payment.agent_id == user.id)
     elif user.role is Role.DOCTOR:
         own = (
@@ -112,7 +113,7 @@ async def create_payment(
     doctor = await session.get(Doctor, payload.doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
-    if user.role is Role.AGENT and doctor.agent_id != user.id:
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
         raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
 
     try:
@@ -154,7 +155,7 @@ async def debts(
     user: User = Depends(require_perm(PAYMENTS_VIEW)),
 ):
     """Vrachlar kesimida qarz va muddat."""
-    agent_id = user.id if user.role is Role.AGENT else None
+    agent_id = doctor_scope(user)
     rows = await reports.doctor_debt_rows(session, agent_id=agent_id)
     if only_overdue:
         rows = [r for r in rows if r["overdue_usd"] > 0]

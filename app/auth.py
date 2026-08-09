@@ -171,11 +171,14 @@ def has_role(user: User, roles: Sequence[Role]) -> bool:
 
 
 def require_perm(permission: str):
-    """Ruxsat kaliti bo'yicha himoya: `Depends(require_perm(PRODUCTS_EDIT))`."""
-    from app.permissions import can
+    """Ruxsat kaliti bo'yicha himoya: `Depends(require_perm(PRODUCTS_EDIT))`.
+
+    Qo'shimcha rollar ham hisobga olinadi.
+    """
+    from app.permissions import user_can
 
     async def _checker(user: User = Depends(get_current_user)) -> User:
-        if not can(user.role, permission):
+        if not user_can(user, permission):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Bu amalga sizning rolingizda ruxsat yo'q",

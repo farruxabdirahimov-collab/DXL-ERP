@@ -35,6 +35,7 @@ class MeOut(ORMModel):
     phone: str | None
     role: Role
     role_label: str
+    extra_roles: list[Role] = []
     is_active: bool
     has_own_stock: bool
     permissions: list[str] = []
@@ -50,6 +51,7 @@ class UserOut(ORMModel):
     role: Role
     is_active: bool
     has_own_stock: bool
+    extra_roles: list[Role] = []
     created_at: datetime
     last_seen_at: datetime | None
 
@@ -60,6 +62,8 @@ class UserCreateIn(BaseModel):
     phone: str | None = None
     telegram_id: int | None = None
     has_own_stock: bool = False
+    #: Qo'shimcha vazifalar — masalan agent bir vaqtda omborchi ham
+    extra_roles: list[Role] = []
 
 
 class UserUpdateIn(BaseModel):
@@ -68,6 +72,7 @@ class UserUpdateIn(BaseModel):
     phone: str | None = None
     is_active: bool | None = None
     has_own_stock: bool | None = None
+    extra_roles: list[Role] | None = None
     note: str | None = None
 
 
@@ -75,6 +80,7 @@ class InviteOut(ORMModel):
     id: int
     token: str
     role: Role
+    extra_roles: list[Role] = []
     full_name: str
     phone: str | None
     expires_at: datetime
@@ -87,6 +93,7 @@ class InviteCreateIn(BaseModel):
     role: Role
     phone: str | None = None
     has_own_stock: bool = False
+    extra_roles: list[Role] = []
     valid_days: int = Field(default=7, ge=1, le=90)
 
 

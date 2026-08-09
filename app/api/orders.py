@@ -23,6 +23,8 @@ from app.models import (
 )
 from app.permissions import (
     ORDERS_CREATE,
+    agent_scope,
+    user_can,
     ORDERS_DIRECTOR,
     ORDERS_FULFILL,
     ORDERS_VIEW,
@@ -78,7 +80,8 @@ async def _load(session: AsyncSession, order_id: int) -> Order:
 
 
 async def _check_access(session: AsyncSession, order: Order, user: User) -> None:
-    if user.role is Role.AGENT and order.agent_id != user.id:
+    scope = agent_scope(user)
+    if scope is not None and order.agent_id != scope:
         raise HTTPException(403, "Bu buyurtma sizga tegishli emas")
     if user.role is Role.DOCTOR:
         doctor = await session.get(Doctor, order.doctor_id)
@@ -99,14 +102,15 @@ async def list_orders(
 ):
     stmt = select(Order).options(selectinload(Order.items))
 
-    if user.role is Role.AGENT:
-        stmt = stmt.where(Order.agent_id == user.id)
+    scope = agent_scope(user)
+    if scope is not None:
+        stmt = stmt.where(Order.agent_id == scope)
     elif user.role is Role.DOCTOR:
         doctor_row = (
             await session.execute(select(Doctor.id).where(Doctor.user_id == user.id))
         ).scalar_one_or_none()
         stmt = stmt.where(Order.doctor_id == (doctor_row or 0))
-    elif user.role is Role.WAREHOUSE and only_open:
+    elif user_can(user, ORDERS_FULFILL) and only_open:
         stmt = stmt.where(
             Order.status.in_([OrderStatus.APPROVED, OrderStatus.PICKING, OrderStatus.SHIPPED])
         )
@@ -117,7 +121,7 @@ async def list_orders(
         stmt = stmt.where(Order.doctor_id == doctor_id)
     if agent_id is not None and user.role not in (Role.AGENT, Role.DOCTOR):
         stmt = stmt.where(Order.agent_id == agent_id)
-    if only_open and user.role is not Role.WAREHOUSE:
+    if only_open and not user_can(user, ORDERS_FULFILL):
         from app.models import OPEN_STATUSES
 
         stmt = stmt.where(Order.status.in_(list(OPEN_STATUSES)))
@@ -158,7 +162,7 @@ async def create_order(
         doctor = await session.get(Doctor, payload.doctor_id)
         if doctor is None or not doctor.is_active:
             raise HTTPException(404, "Vrach topilmadi")
-        if user.role is Role.AGENT and doctor.agent_id not in (None, user.id):
+        if agent_scope(user) is not None and doctor.agent_id not in (None, user.id):
             raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
         source = OrderSource.AGENT
 
@@ -202,7 +206,7 @@ async def approve_order(
 
     if user.role is Role.DOCTOR:
         raise HTTPException(403, "Vrach buyurtmani tasdiqlay olmaydi")
-    if order.status is OrderStatus.DIRECTOR_REVIEW and not can(user.role, ORDERS_DIRECTOR):
+    if order.status is OrderStatus.DIRECTOR_REVIEW and not user_can(user, ORDERS_DIRECTOR):
         raise HTTPException(403, "Buni faqat direktor tasdiqlaydi")
 
     previous = order.status

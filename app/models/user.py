@@ -71,6 +71,11 @@ class User(Base, TimestampMixin):
     #: Agent uchun: o'zining qo'l ombori bo'ladimi (sozlanadigan)
     has_own_stock: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    #: Qo'shimcha rollar — bitta xodim bir vaqtda bir necha ish qilsa.
+    #: Masalan asosiy rol "agent", qo'shimcha ["warehouse"] — u ham sotadi,
+    #: ham omborni yuritadi. Ruxsatlar birlashtiriladi.
+    extra_roles: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
     note: Mapped[str | None] = mapped_column(Text)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by_id: Mapped[int | None] = mapped_column(
@@ -92,6 +97,7 @@ class Invite(Base, TimestampMixin):
     full_name: Mapped[str] = mapped_column(String(160), nullable=False)
     phone: Mapped[str | None] = mapped_column(String(20))
     has_own_stock: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    extra_roles: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")

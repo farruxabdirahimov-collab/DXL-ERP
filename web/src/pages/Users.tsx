@@ -58,7 +58,14 @@ export default function Users() {
     role: Role
     phone: string
     has_own_stock: boolean
-  }>({ full_name: '', role: 'agent', phone: '', has_own_stock: false })
+    extra_roles: Role[]
+  }>({ full_name: '', role: 'agent', phone: '', has_own_stock: false, extra_roles: [] })
+
+  function toggleExtra(current: Role[], role: Role): Role[] {
+    return current.includes(role)
+      ? current.filter((r) => r !== role)
+      : [...current, role]
+  }
 
   async function submitInvite() {
     if (!form.full_name.trim()) {
@@ -71,6 +78,7 @@ export default function Users() {
         role: form.role,
         phone: form.phone || null,
         has_own_stock: form.has_own_stock,
+        extra_roles: form.extra_roles,
         valid_days: 7,
       })
       haptic('success')
@@ -78,7 +86,13 @@ export default function Users() {
         `Taklif havolasi tayyor:\n${invite.link}\n\nShu havolani xodimga yuboring — u bosgach avtomatik ro‘yxatdan o‘tadi.`,
       )
       setInviteOpen(false)
-      setForm({ full_name: '', role: 'agent', phone: '', has_own_stock: false })
+      setForm({
+        full_name: '',
+        role: 'agent',
+        phone: '',
+        has_own_stock: false,
+        extra_roles: [],
+      })
     } catch (err) {
       alertUser(err instanceof Error ? err.message : 'Xatolik')
     }
@@ -103,6 +117,7 @@ export default function Users() {
           role: editing.role,
           phone: editing.phone,
           has_own_stock: editing.has_own_stock,
+          extra_roles: editing.extra_roles ?? [],
         },
       })
       haptic('success')
@@ -149,6 +164,11 @@ export default function Users() {
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <Chip>{ROLE_LABELS[user.role]}</Chip>
+                    {(user.extra_roles ?? []).map((role) => (
+                      <Chip key={role} color="var(--accent)">
+                        + {ROLE_LABELS[role]}
+                      </Chip>
+                    ))}
                     {!user.is_active ? (
                       <Chip color="var(--danger)">Faolsiz</Chip>
                     ) : null}
@@ -240,6 +260,36 @@ export default function Users() {
             Qo‘l ombori bo‘lsin (agent o‘zida tovar olib yuradi)
           </label>
         ) : null}
+
+        <Field
+          label="Qo‘shimcha vazifalar"
+          hint="Bitta xodim bir necha ish qilsa — belgilang. Ruxsatlar birlashadi."
+        >
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(ROLE_LABELS) as Role[])
+              .filter((role) => role !== 'doctor' && role !== form.role)
+              .map((role) => (
+                <button
+                  key={role}
+                  className="chip"
+                  style={
+                    form.extra_roles.includes(role)
+                      ? {
+                          background: 'var(--accent)',
+                          color: 'var(--accent-text)',
+                          borderColor: 'transparent',
+                        }
+                      : undefined
+                  }
+                  onClick={() =>
+                    setForm({ ...form, extra_roles: toggleExtra(form.extra_roles, role) })
+                  }
+                >
+                  {ROLE_LABELS[role]}
+                </button>
+              ))}
+          </div>
+        </Field>
         <button
           className="btn btn-primary w-full"
           disabled={createInvite.isPending}
@@ -321,6 +371,39 @@ export default function Users() {
                 Qo‘l ombori bo‘lsin
               </label>
             ) : null}
+            <Field
+              label="Qo‘shimcha vazifalar"
+              hint="Masalan agent bir vaqtda omborchi ham bo‘lsa"
+            >
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(ROLE_LABELS) as Role[])
+                  .filter((role) => role !== 'doctor' && role !== editing.role)
+                  .map((role) => (
+                    <button
+                      key={role}
+                      className="chip"
+                      style={
+                        (editing.extra_roles ?? []).includes(role)
+                          ? {
+                              background: 'var(--accent)',
+                              color: 'var(--accent-text)',
+                              borderColor: 'transparent',
+                            }
+                          : undefined
+                      }
+                      onClick={() =>
+                        setEditing({
+                          ...editing,
+                          extra_roles: toggleExtra(editing.extra_roles ?? [], role),
+                        })
+                      }
+                    >
+                      {ROLE_LABELS[role]}
+                    </button>
+                  ))}
+              </div>
+            </Field>
+
             <div className="mb-3 text-[12px] text-[var(--muted)]">
               Oxirgi faollik: {dateTime(editing.last_seen_at)}
             </div>

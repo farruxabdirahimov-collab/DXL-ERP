@@ -101,6 +101,7 @@ async def _redeem_invite(message: Message, token: str) -> bool:
             full_name=invite.full_name,
             role=invite.role,
             has_own_stock=invite.has_own_stock,
+            extra_roles=list(invite.extra_roles or []),
             is_active=True,
             created_by_id=invite.created_by_id,
         )

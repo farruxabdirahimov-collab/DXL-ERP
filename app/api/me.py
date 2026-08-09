@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.db import get_session
 from app.models import ROLE_LABELS_UZ, Doctor, Role, User
-from app.permissions import permissions_for
+from app.permissions import effective_permissions
 from app.schemas import MeOut
 
 router = APIRouter(tags=["me"])
@@ -35,6 +35,7 @@ async def read_me(
         role_label=ROLE_LABELS_UZ[user.role],
         is_active=user.is_active,
         has_own_stock=user.has_own_stock,
-        permissions=permissions_for(user.role),
+        extra_roles=list(user.extra_roles or []),
+        permissions=sorted(effective_permissions(user)),
         doctor_id=doctor_id,
     )

@@ -12,7 +12,7 @@ from app.auth import require_perm
 from app.config import settings
 from app.db import get_session
 from app.models import Role, User
-from app.permissions import REPORTS_FINANCE, REPORTS_VIEW
+from app.permissions import REPORTS_FINANCE, REPORTS_VIEW, doctor_scope
 from app.services import reports as rp
 from app.utils.excel import build_workbook
 
@@ -39,7 +39,7 @@ async def dashboard(
     user: User = Depends(require_perm(REPORTS_VIEW)),
 ):
     data = await rp.dashboard(session)
-    if user.role is Role.AGENT:
+    if doctor_scope(user) is not None:
         start, end = _range(None, None)
         data["my_month"] = await rp.sales_summary(session, start, end, agent_id=user.id)
     return data
@@ -53,7 +53,7 @@ async def sales(
     user: User = Depends(require_perm(REPORTS_VIEW)),
 ):
     start, end = _range(date_from, date_to)
-    agent_id = user.id if user.role is Role.AGENT else None
+    agent_id = doctor_scope(user)
     return {
         "summary": await rp.sales_summary(session, start, end, agent_id=agent_id),
         "by_category": await rp.category_breakdown(session, start, end),
@@ -152,7 +152,7 @@ async def doctors_report(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(require_perm(REPORTS_VIEW)),
 ):
-    agent_id = user.id if user.role is Role.AGENT else None
+    agent_id = doctor_scope(user)
     return await rp.doctor_rows(session, agent_id=agent_id)
 
 
@@ -235,7 +235,7 @@ async def export_report(
         raise HTTPException(400, f"Noma'lum hisobot turi: {kind}")
 
     start, end = _range(date_from, date_to)
-    agent_id = user.id if user.role is Role.AGENT else None
+    agent_id = doctor_scope(user)
 
     if kind == "top":
         rows = await rp.top_products(session, start, end, limit=200)

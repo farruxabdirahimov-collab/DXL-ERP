@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import require_perm
 from app.db import get_session
 from app.models import Role, User
-from app.permissions import PLANS_EDIT, PLANS_VIEW
+from app.permissions import PLANS_EDIT, PLANS_VIEW, user_can
 from app.schemas import OkOut, PlanIn
 from app.services import plans as plans_service
 from app.services.fx import today_local
@@ -56,7 +56,7 @@ async def user_plan(
     session: AsyncSession = Depends(get_session),
     actor: User = Depends(require_perm(PLANS_VIEW)),
 ):
-    if actor.role is Role.AGENT and actor.id != user_id:
+    if not user_can(actor, PLANS_EDIT) and actor.id != user_id:
         raise HTTPException(403, "Faqat o'z rejangizni ko'ra olasiz")
     agent = await session.get(User, user_id)
     if agent is None:

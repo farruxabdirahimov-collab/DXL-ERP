@@ -102,3 +102,38 @@ def permissions_for(role: Role) -> list[str]:
 
 def can(role: Role, permission: str) -> bool:
     return permission in PERMISSIONS.get(role, set())
+
+
+def effective_permissions(user) -> set[str]:
+    """Asosiy rol + qo'shimcha rollar ruxsatlarining birlashmasi."""
+    result = set(PERMISSIONS.get(user.role, set()))
+    for raw in user.extra_roles or []:
+        try:
+            result |= PERMISSIONS.get(Role(raw), set())
+        except ValueError:  # noma'lum rol saqlanib qolgan bo'lsa
+            continue
+    return result
+
+
+def user_can(user, permission: str) -> bool:
+    return permission in effective_permissions(user)
+
+
+def agent_scope(user) -> int | None:
+    """Buyurtmalarni faqat o'ziniki bilan cheklash kerakmi? Kerak bo'lsa — ID.
+
+    Agent bir vaqtda omborchi ham bo'lsa (ORDERS_FULFILL bor), u boshqalarning
+    buyurtmalarini ham ko'rishi shart — aks holda yig'a olmaydi.
+    """
+    if user.role is not Role.AGENT:
+        return None
+    if user_can(user, ORDERS_FULFILL) or user_can(user, DOCTORS_ALL):
+        return None
+    return user.id
+
+
+def doctor_scope(user) -> int | None:
+    """Vrachlar ro'yxatini cheklash kerakmi? Qo'shimcha rol bunga ta'sir qilmaydi."""
+    if user.role is Role.AGENT and not user_can(user, DOCTORS_ALL):
+        return user.id
+    return None
