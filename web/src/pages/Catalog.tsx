@@ -40,6 +40,7 @@ export default function Catalog() {
   const [onlyInStock, setOnlyInStock] = useState(false)
   const [selected, setSelected] = useState<Product | null>(null)
   const [editing, setEditing] = useState<Partial<Product> | null>(null)
+  const [seeding, setSeeding] = useState(false)
 
   const { data: categories } = useCategories()
   const { data: filters } = useProductFilters()
@@ -59,6 +60,20 @@ export default function Catalog() {
     { key: '', label: 'Hammasi' },
     ...(categories ?? []).map((c) => ({ key: String(c.id), label: c.name_uz })),
   ]
+
+  async function loadStarterCatalog() {
+    setSeeding(true)
+    try {
+      const result = await api.post<{ message?: string }>('/admin/seed-catalog')
+      haptic('success')
+      alertUser(result.message ?? 'Katalog yuklandi')
+      window.location.reload()
+    } catch (err) {
+      alertUser(err instanceof Error ? err.message : 'Yuklashda xatolik')
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   async function handleImport(file: File) {
     try {
@@ -195,7 +210,28 @@ export default function Catalog() {
 
       {isLoading ? <Loading /> : null}
       {error ? <ErrorBox error={error} /> : null}
-      {products && products.length === 0 ? <Empty text="Mahsulot topilmadi" /> : null}
+
+      {/* Birinchi ishga tushirish: katalog umuman bo'sh */}
+      {products?.length === 0 && !search && !categoryId && !implantType && canEdit ? (
+        <Card>
+          <div className="mb-1 text-[15px] font-bold">Katalog hali bo‘sh</div>
+          <p className="mb-3 text-[13px] text-[var(--muted)]">
+            Boshlang‘ich DXL katalogini yuklang — 103 ta implant va komponent.
+            Keyin uni Excel orqali o‘z prays-listingiz bilan almashtirasiz.
+          </p>
+          <button
+            className="btn btn-primary w-full"
+            disabled={seeding}
+            onClick={loadStarterCatalog}
+          >
+            {seeding ? 'Yuklanmoqda…' : '📥 Boshlang‘ich katalogni yuklash'}
+          </button>
+        </Card>
+      ) : null}
+
+      {products?.length === 0 && (search || categoryId || implantType) ? (
+        <Empty text="Mahsulot topilmadi" />
+      ) : null}
 
       <div className="space-y-2">
         {(products ?? []).map((product) => {

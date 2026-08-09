@@ -154,6 +154,11 @@ async def _prepare_database() -> None:
     async with session_scope() as session:
         await ensure_defaults(session)
         await main_warehouse(session)
+        # Kategoriyalarsiz mahsulot qo'shib ham, Excel'dan import qilib ham
+        # bo'lmaydi — shuning uchun ular har doim mavjud bo'lishi kerak
+        from seed.load import seed_categories
+
+        await seed_categories(session)
 
 
 async def _bootstrap() -> None:

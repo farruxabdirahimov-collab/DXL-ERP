@@ -181,6 +181,29 @@ async def list_invites(
     return rows
 
 
+@router.post("/seed-catalog", response_model=OkOut)
+async def seed_catalog(
+    session: AsyncSession = Depends(get_session),
+    actor: User = Depends(require_perm(USERS_MANAGE)),
+):
+    """Boshlang'ich DXL katalogini yuklaydi (103 ta namunaviy SKU).
+
+    Keyin uni Excel orqali o'z prays-listingiz bilan almashtirish mumkin.
+    Mahsulotlar SKU bo'yicha yangilanadi, ombor qoldig'iga tegilmaydi.
+    """
+    from seed.load import seed_products
+
+    created, updated = await seed_products(session)
+    await log_action(
+        session, actor, "import", "product", None,
+        new={"yangi": created, "yangilandi": updated, "manba": "boshlangich katalog"},
+    )
+    return OkOut(
+        ok=True,
+        message=f"Katalog yuklandi: {created} ta yangi, {updated} tasi yangilandi",
+    )
+
+
 @router.delete("/invites/{invite_id}", response_model=OkOut)
 async def delete_invite(
     invite_id: int,
