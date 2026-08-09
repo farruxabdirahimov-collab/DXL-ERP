@@ -7,6 +7,7 @@ import { ErrorBox, Loading } from './components/ui'
 
 import Dashboard from './pages/Dashboard'
 import Catalog from './pages/Catalog'
+import Content from './pages/Content'
 import Stock from './pages/Stock'
 import Doctors from './pages/Doctors'
 import DoctorPage from './pages/DoctorPage'
@@ -69,6 +70,8 @@ export default function App() {
             element={isDoctor ? <Navigate to="/catalog" replace /> : <Dashboard />}
           />
           <Route path="/catalog" element={<Catalog />} />
+          <Route path="/content" element={<Content />} />
+          <Route path="/content/:id" element={<Content />} />
           <Route path="/stock" element={<Stock />} />
           <Route path="/doctors" element={<Doctors />} />
           <Route path="/doctors/:id" element={<DoctorPage />} />

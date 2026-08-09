@@ -14,8 +14,9 @@ export function navFor(me: Me): NavItem[] {
       return [
         { to: '/catalog', label: 'Katalog', icon: '🦷' },
         { to: '/new-order', label: 'Buyurtma', icon: '🛒' },
+        { to: '/content', label: 'Bilim', icon: '📚' },
         { to: '/orders', label: 'Tarix', icon: '📋' },
-        { to: '/my-debt', label: 'Qarzim', icon: '💳' },
+        { to: '/my-debt', label: 'Hisobim', icon: '💳' },
       ]
     case 'agent':
       return [

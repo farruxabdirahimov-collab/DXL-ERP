@@ -11,6 +11,14 @@ from app.models.catalog import (
     Warehouse,
     WarehouseKind,
 )
+from app.models.content import (
+    AUDIENCE_LABELS_UZ,
+    POST_LABELS_UZ,
+    Audience,
+    Broadcast,
+    Post,
+    PostKind,
+)
 from app.models.crm import (
     CATEGORY_LABELS_UZ,
     TASK_LABELS_UZ,
@@ -75,7 +83,11 @@ __all__ = [
     "STAFF_ROLES",
     "STATUS_LABELS_UZ",
     "TASK_LABELS_UZ",
+    "AUDIENCE_LABELS_UZ",
+    "POST_LABELS_UZ",
+    "Audience",
     "AuditLog",
+    "Broadcast",
     "Base",
     "DocCounter",
     "Doctor",
@@ -93,6 +105,8 @@ __all__ = [
     "Payment",
     "PaymentAllocation",
     "PaymentMethod",
+    "Post",
+    "PostKind",
     "Product",
     "ProductCategory",
     "Receipt",

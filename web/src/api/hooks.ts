@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type {
+  AudienceOption,
   AuditRow,
+  Broadcast,
   Category,
   Dashboard,
   DebtRow,
   Doctor,
   DoctorRequest,
   Me,
+  MyPurchases,
   OkResponse,
   Order,
   Payment,
+  Post,
   PlanProgress,
   Product,
   SettingRow,
@@ -495,4 +499,64 @@ export const useAudit = (params: Record<string, unknown> = {}) =>
   useQuery({
     queryKey: ['audit', params],
     queryFn: () => api.get<AuditRow[]>('/admin/audit', params),
+  })
+
+
+/* ---------------------------------------------------------------- kontent */
+export const usePosts = (params: Record<string, unknown> = {}) =>
+  useQuery({
+    queryKey: ['posts', params],
+    queryFn: () => api.get<Post[]>('/content/posts', params),
+  })
+
+export const usePost = (id?: number) =>
+  useQuery({
+    queryKey: ['post', id],
+    queryFn: () => api.get<Post>(`/content/posts/${id}`),
+    enabled: Boolean(id),
+  })
+
+export const useSavePost = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: number; body: Record<string, unknown> }) =>
+      id
+        ? api.patch<Post>(`/content/posts/${id}`, body)
+        : api.post<Post>('/content/posts', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['posts'] }),
+  })
+}
+
+export const useDeletePost = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.del<OkResponse>(`/content/posts/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['posts'] }),
+  })
+}
+
+export const useAudiences = () =>
+  useQuery({
+    queryKey: ['audiences'],
+    queryFn: () => api.get<AudienceOption[]>('/content/audiences'),
+  })
+
+export const useBroadcasts = () =>
+  useQuery({
+    queryKey: ['broadcasts'],
+    queryFn: () => api.get<Broadcast[]>('/content/broadcasts'),
+  })
+
+export const useSendBroadcast = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: unknown) => api.post<Broadcast>('/content/broadcasts', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['broadcasts'] }),
+  })
+}
+
+export const useMyPurchases = () =>
+  useQuery({
+    queryKey: ['my-purchases'],
+    queryFn: () => api.get<MyPurchases>('/content/my-purchases'),
   })

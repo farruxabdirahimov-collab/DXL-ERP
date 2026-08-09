@@ -343,3 +343,54 @@ export interface DoctorRequest {
   reject_reason: string | null
   doctor_id: number | null
 }
+
+export type PostKind = 'article' | 'video' | 'news'
+
+export interface Post {
+  id: number
+  kind: PostKind
+  kind_label: string | null
+  title: string
+  summary: string | null
+  body: string | null
+  media_url: string | null
+  image_url: string | null
+  is_published: boolean
+  published_at: string | null
+  views: number
+  author_id: number | null
+  author_name: string | null
+  created_at: string
+}
+
+export interface Broadcast {
+  id: number
+  created_at: string
+  text: string
+  audience: string
+  audience_label: string | null
+  doctor_id: number | null
+  post_id: number | null
+  sent_count: number
+  failed_count: number
+  author_name: string | null
+}
+
+export interface AudienceOption {
+  value: string
+  label: string
+  count: number | null
+}
+
+export interface MyPurchases {
+  full_name: string
+  clinic_name: string | null
+  category: string
+  loyalty_score: number
+  total_usd: string
+  month_usd: string
+  orders: number
+  units: number
+  last_order_at: string | null
+  top_products: { name: string; sku: string; qty: number; amount_usd: string }[]
+}

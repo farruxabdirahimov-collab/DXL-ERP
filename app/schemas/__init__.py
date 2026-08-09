@@ -8,7 +8,9 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import (
+    Audience,
     DoctorCategory,
+    PostKind,
     RequestStatus,
     OrderSource,
     OrderStatus,
@@ -497,3 +499,61 @@ class AuditOut(ORMModel):
 class OkOut(BaseModel):
     ok: bool = True
     message: str | None = None
+
+
+# ------------------------------------------------------------------ kontent
+class PostOut(ORMModel):
+    id: int
+    kind: PostKind
+    kind_label: str | None = None
+    title: str
+    summary: str | None
+    body: str | None
+    media_url: str | None
+    image_url: str | None
+    is_published: bool
+    published_at: datetime | None
+    views: int
+    author_id: int | None
+    author_name: str | None = None
+    created_at: datetime
+
+
+class PostIn(BaseModel):
+    kind: PostKind = PostKind.ARTICLE
+    title: str = Field(min_length=2, max_length=200)
+    summary: str | None = Field(default=None, max_length=400)
+    body: str | None = None
+    media_url: str | None = Field(default=None, max_length=500)
+    image_url: str | None = Field(default=None, max_length=500)
+    is_published: bool = True
+
+
+class PostUpdateIn(BaseModel):
+    kind: PostKind | None = None
+    title: str | None = Field(default=None, min_length=2, max_length=200)
+    summary: str | None = None
+    body: str | None = None
+    media_url: str | None = None
+    image_url: str | None = None
+    is_published: bool | None = None
+
+
+class BroadcastIn(BaseModel):
+    text: str = Field(min_length=1)
+    audience: Audience = Audience.ALL_DOCTORS
+    doctor_id: int | None = None
+    post_id: int | None = None
+
+
+class BroadcastOut(ORMModel):
+    id: int
+    created_at: datetime
+    text: str
+    audience: Audience
+    audience_label: str | None = None
+    doctor_id: int | None
+    post_id: int | None
+    sent_count: int
+    failed_count: int
+    author_name: str | None = None
