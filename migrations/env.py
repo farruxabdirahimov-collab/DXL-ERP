@@ -12,8 +12,15 @@ from app.config import settings
 from app.models import Base
 
 config = context.config
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+
+# Migratsiya ilova ichida ishga tushganda logging'ga TEGILMAYDI.
+# Aks holda alembic ilovaning loggerlarini o'chirib, darajasini pasaytiradi —
+# natijada undan keyingi hamma xabar (webhook, xatolar) ko'rinmay qolardi.
+# Terminaldan `alembic upgrade head` ishlatilganda esa odatdagidek sozlanadi.
+if config.config_file_name is not None and config.attributes.get(
+    "configure_logger", True
+):
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 config.set_main_option("sqlalchemy.url", settings.database_url)
 target_metadata = Base.metadata

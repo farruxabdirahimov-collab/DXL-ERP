@@ -50,6 +50,8 @@ async def _run_migrations() -> None:
     cfg = Config(str(BASE_DIR / "alembic.ini"))
     cfg.set_main_option("script_location", str(BASE_DIR / "migrations"))
     cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    # Alembic ilovaning logging sozlamalarini buzmasin
+    cfg.attributes["configure_logger"] = False
 
     def _upgrade() -> None:
         command.upgrade(cfg, "head")
