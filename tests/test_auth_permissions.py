@@ -155,3 +155,47 @@ def test_foydalanuvchi_boshqaruvi_faqat_admin_rollarda():
     for role in Role:
         expected = role in (Role.SUPERADMIN, Role.DIRECTOR)
         assert can(role, USERS_MANAGE) is expected
+
+
+# --------------------------------------------------- webhook manzili
+def test_webhook_manzili_tekshiriladi():
+    from app.config import webhook_url_problem
+
+    assert webhook_url_problem("https://dxl-erp-production.up.railway.app") is None
+    assert webhook_url_problem("https://erp.example.com:443") is None
+
+    # Telegram qabul qilmaydigan holatlar
+    assert "https" in (webhook_url_problem("http://erp.example.com") or "")
+    assert "bo'sh joy" in (webhook_url_problem("https://er p.com") or "")
+    assert "${{" in (webhook_url_problem("https://${{DOMAIN}}") or "")
+    assert "port" in (webhook_url_problem("https://erp.example.com:9000") or "")
+    assert webhook_url_problem("") is not None
+
+
+def test_webapp_url_avtomatik_tuzatiladi(monkeypatch):
+    from app.config import Settings
+
+    # Sxema unutilgan
+    assert (
+        Settings(webapp_url="erp.example.com").webapp_url == "https://erp.example.com"
+    )
+    # http -> https
+    assert (
+        Settings(webapp_url="http://erp.example.com").webapp_url
+        == "https://erp.example.com"
+    )
+    # Yaroqsiz qiymat bo'lsa platforma domenidan olinadi
+    monkeypatch.setenv("RAILWAY_PUBLIC_DOMAIN", "dxl-erp-production.up.railway.app")
+    assert (
+        Settings(webapp_url="https://${{DOMAIN}}").webapp_url
+        == "https://dxl-erp-production.up.railway.app"
+    )
+
+
+def test_webhook_secret_telegram_talabiga_moslanadi():
+    from app.config import Settings
+
+    assert Settings(webhook_secret="maxfiy parol!").webhook_secret == "maxfiyparol"
+    assert Settings(webhook_secret="ok-secret_123").webhook_secret == "ok-secret_123"
+    # Juda qisqa qolsa xavfsiz standart qiymat
+    assert len(Settings(webhook_secret="a!").webhook_secret) >= 8

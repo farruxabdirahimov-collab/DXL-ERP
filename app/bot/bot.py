@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from app.config import settings
+from app.config import settings, webhook_url_problem
 
 log = logging.getLogger(__name__)
 
@@ -89,12 +89,17 @@ async def setup_webhook() -> None:
         log.warning("BOT_TOKEN sozlanmagan — bot ishga tushmadi")
         return
     url = f"{settings.webapp_url}/tg/webhook"
-    if not url.startswith("https://"):
-        log.error(
-            "WEBAPP_URL https:// bilan boshlanishi shart — Telegram boshqasini "
-            "qabul qilmaydi. Hozirgi qiymat: %s",
-            settings.webapp_url,
+
+    problem = webhook_url_problem(settings.webapp_url)
+    if problem is not None:
+        current = settings.webapp_url or "(bo'sh)"
+        message = (
+            f"WEBAPP_URL yaroqsiz ({problem}). Hozirgi qiymat: «{current}». "
+            "Railway'da Variables -> WEBAPP_URL ni servis domeningizga to'g'rilang, "
+            "masalan: https://dxl-erp-production.up.railway.app"
         )
+        log.error("%s", message)
+        raise ValueError(message)
 
     await bot.set_webhook(
         url=url,

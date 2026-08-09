@@ -240,13 +240,16 @@ async def reset_webhook(
     if bot is None:
         raise HTTPException(400, "BOT_TOKEN sozlanmagan")
 
+    kutilgan = f"{app_settings.webapp_url}/tg/webhook"
     try:
         await setup_webhook()
     except Exception as exc:
-        raise HTTPException(400, f"Webhook o'rnatilmadi: {exc}") from exc
+        raise HTTPException(
+            400,
+            f"Webhook o'rnatilmadi.\n\nUrinilgan manzil: {kutilgan}\n\nSabab: {exc}",
+        ) from exc
 
     info = await bot.get_webhook_info()
-    kutilgan = f"{app_settings.webapp_url}/tg/webhook"
     return {
         "ok": info.url == kutilgan,
         "webhook_url": info.url or "(bo'sh)",

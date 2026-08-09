@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import re
 from datetime import time
 from functools import lru_cache
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from pydantic import Field, field_validator
@@ -13,6 +16,46 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def _parse_hhmm(value: str) -> time:
     hh, _, mm = value.strip().partition(":")
     return time(hour=int(hh), minute=int(mm or 0))
+
+
+#: Telegram webhook faqat shu portlarda ishlaydi
+TELEGRAM_PORTS = {80, 88, 443, 8443}
+_DOMAIN_RE = re.compile(r"^[A-Za-z0-9.-]+$")
+
+
+def webhook_url_problem(url: str) -> str | None:
+    """Manzil Telegram webhook uchun yaroqlimi? Muammo matni yoki None."""
+    if not url:
+        return "manzil bo'sh"
+    if any(ch.isspace() for ch in url):
+        return "manzilda bo'sh joy bor"
+    if "{" in url or "}" in url:
+        return (
+            "manzilda ${{...}} qolib ketgan — Railway o'zgaruvchisi almashtirilmagan"
+        )
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        return f"https:// bo'lishi shart (hozir «{parsed.scheme or 'sxemasiz'}»)"
+    if not parsed.hostname:
+        return "domen nomi yo'q"
+    if not _DOMAIN_RE.match(parsed.hostname) or "." not in parsed.hostname:
+        return f"domen nomi noto'g'ri: «{parsed.hostname}»"
+    if parsed.port is not None and parsed.port not in TELEGRAM_PORTS:
+        return f"Telegram {parsed.port}-portni qabul qilmaydi (80, 88, 443, 8443)"
+    return None
+
+
+def _platform_domain() -> str | None:
+    """Railway o'zi beradigan public domen — WEBAPP_URL sozlanmagan bo'lsa ishlatiladi."""
+    for key in ("RAILWAY_PUBLIC_DOMAIN", "RAILWAY_STATIC_URL", "PUBLIC_DOMAIN"):
+        value = (os.environ.get(key) or "").strip().rstrip("/")
+        if not value:
+            continue
+        if not value.startswith("http"):
+            value = f"https://{value}"
+        if webhook_url_problem(value) is None:
+            return value
+    return None
 
 
 class Settings(BaseSettings):
@@ -69,11 +112,19 @@ class Settings(BaseSettings):
 
     @field_validator("webapp_url")
     @classmethod
-    def _strip_slash(cls, v: str) -> str:
-        v = v.strip().rstrip("/")
-        # Telegram faqat https:// manzilni qabul qiladi — sxema unutilgan bo'lsa qo'shamiz
+    def _normalize_webapp_url(cls, v: str) -> str:
+        v = (v or "").strip().rstrip("/")
+        # Telegram faqat https:// qabul qiladi — sxema unutilgan bo'lsa qo'shamiz
         if v and not v.startswith(("http://", "https://")):
             v = f"https://{v}"
+        if v.startswith("http://"):
+            v = v.replace("http://", "https://", 1)
+
+        # Qiymat yaroqsiz bo'lsa, platforma bergan domenga tayanamiz
+        if webhook_url_problem(v) is not None:
+            fallback = _platform_domain()
+            if fallback:
+                return fallback
         return v
 
     @property
