@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     webapp_url: str = "http://localhost:5173"
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/dxl_erp"
+    #: Zaxira: ichki tarmoq manzili topilmasa ishlatiladi (Railway'da
+    #: `${{Postgres.DATABASE_PUBLIC_URL}}`). Bo'sh bo'lsa zaxira ishlatilmaydi.
+    database_public_url: str = ""
 
     superadmin_telegram_id: int = 0
 
@@ -41,10 +44,12 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     web_dist: str = Field(default="web/dist", description="Yig'ilgan Mini App papkasi")
 
-    @field_validator("database_url")
+    @field_validator("database_url", "database_public_url")
     @classmethod
     def _normalize_db_url(cls, v: str) -> str:
         """Railway `postgresql://` beradi — asyncpg drayveriga o'tkazamiz."""
+        if not v:
+            return v
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
         if v.startswith("postgresql://"):
@@ -71,6 +76,16 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+
+def db_host(url: str) -> str:
+    """URL'dan `xost:port/baza` ni ajratadi — parol ko'rsatilmaydi (logga xavfsiz)."""
+    if not url:
+        return "(bo'sh)"
+    tail = url.split("://", 1)[-1]
+    if "@" in tail:
+        tail = tail.split("@", 1)[1]
+    return tail.split("?", 1)[0]
 
 
 @lru_cache

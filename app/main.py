@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.api import api_router
-from app.config import settings
+from app.config import db_host, settings
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -57,8 +57,63 @@ async def _run_migrations() -> None:
     log.info("Migratsiyalar qo'llandi")
 
 
+async def _try_connect(url: str) -> str | None:
+    """Manzilga ulanib ko'radi. Xato bo'lsa sababini qaytaradi."""
+    from sqlalchemy import text
+
+    from app.db import make_engine
+
+    probe = make_engine(url)
+    try:
+        async with probe.connect() as connection:
+            await connection.execute(text("SELECT 1"))
+        return None
+    except Exception as exc:
+        return f"{type(exc).__name__}: {exc}"
+    finally:
+        await probe.dispose()
+
+
+async def _select_database() -> None:
+    """Ichki manzil ishlamasa, `DATABASE_PUBLIC_URL` zaxirasiga o'tadi."""
+    from app import db as db_module
+
+    primary = settings.database_url
+    log.info("Bazaga ulanmoqda: %s", db_host(primary))
+
+    error = await _try_connect(primary)
+    if error is None:
+        return
+
+    log.error("Baza manzili ishlamadi (%s): %s", db_host(primary), error)
+
+    fallback = settings.database_public_url
+    if not fallback or fallback == primary:
+        STATE["db_hint"] = (
+            f"«{db_host(primary)}» manzili topilmadi. Railway'da DATABASE_URL ni "
+            "${{Postgres.DATABASE_URL}} deb yozing yoki zaxira sifatida "
+            "DATABASE_PUBLIC_URL o'zgaruvchisini qo'shing."
+        )
+        raise RuntimeError(f"Bazaga ulanib bo'lmadi: {error}")
+
+    log.warning("Zaxira manzilga o'tilmoqda: %s", db_host(fallback))
+    fallback_error = await _try_connect(fallback)
+    if fallback_error is not None:
+        STATE["db_hint"] = (
+            f"Ikkala manzil ham ishlamadi: {db_host(primary)} va {db_host(fallback)}"
+        )
+        raise RuntimeError(f"Zaxira manzil ham ishlamadi: {fallback_error}")
+
+    await db_module.rebind(fallback)
+    STATE["db_manzil"] = db_host(fallback)
+    log.info("Zaxira manzil ishladi: %s", db_host(fallback))
+
+
 async def _prepare_database() -> None:
     """Migratsiya + boshlang'ich sozlamalar. Sekin bo'lishi mumkin."""
+    await _select_database()
+    STATE.setdefault("db_manzil", db_host(settings.database_url))
+
     if settings.auto_migrate:
         await _run_migrations()
 
@@ -90,7 +145,7 @@ async def _bootstrap() -> None:
                   DB_STARTUP_TIMEOUT)
     except Exception as exc:
         STATE["db"] = f"xato: {exc}"
-        STATE["error"] = str(exc)
+        STATE["error"] = STATE.get("db_hint") or str(exc)
         log.exception("Bazani tayyorlashda xato")
 
     if settings.seed_demo:
@@ -201,7 +256,8 @@ async def diagnostics() -> dict:
             "webapp_url": settings.webapp_url,
             "webhook_secret_sozlangan": settings.webhook_secret != "dxl-erp-secret",
             "superadmin_telegram_id": settings.superadmin_telegram_id or None,
-            "database_url_sozlangan": "localhost" not in settings.database_url,
+            "database_manzil": db_host(settings.database_url),
+            "database_public_url_sozlangan": bool(settings.database_public_url),
             "tz": settings.tz,
             "auto_migrate": settings.auto_migrate,
         },

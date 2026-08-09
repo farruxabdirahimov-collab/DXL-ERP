@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
@@ -13,20 +14,24 @@ from sqlalchemy.ext.asyncio import (
 
 from app.config import settings
 
-#: asyncpg uchun ulanish cheklovi — baza javob bermasa cheksiz kutib qolmaslik uchun
-_CONNECT_ARGS: dict = {}
-if "asyncpg" in settings.database_url:
-    _CONNECT_ARGS = {"timeout": 10, "command_timeout": 60}
+def make_engine(url: str) -> AsyncEngine:
+    """Baza uchun engine. asyncpg'ga ulanish vaqti cheklanadi."""
+    connect_args: dict = {}
+    if "asyncpg" in url:
+        # Baza javob bermasa cheksiz kutib qolmaslik uchun
+        connect_args = {"timeout": 10, "command_timeout": 60}
+    return create_async_engine(
+        url,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30,
+        connect_args=connect_args,
+        echo=False,
+    )
 
-engine = create_async_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_timeout=30,
-    connect_args=_CONNECT_ARGS,
-    echo=False,
-)
+
+engine = make_engine(settings.database_url)
 
 SessionLocal = async_sessionmaker(
     engine,
@@ -34,6 +39,16 @@ SessionLocal = async_sessionmaker(
     expire_on_commit=False,
     autoflush=False,
 )
+
+
+async def rebind(url: str) -> None:
+    """Boshqa baza manziliga o'tish (ichki xost topilmaganda zaxiraga)."""
+    global engine
+    previous = engine
+    engine = make_engine(url)
+    SessionLocal.configure(bind=engine)
+    settings.database_url = url
+    await previous.dispose()
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
