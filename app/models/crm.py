@@ -138,6 +138,47 @@ class Doctor(Base, TimestampMixin):
     )
 
 
+class RequestStatus(str, enum.Enum):
+    PENDING = "pending"    # Tasdiq kutilmoqda
+    APPROVED = "approved"  # Tasdiqlandi
+    REJECTED = "rejected"  # Rad etildi
+
+
+class DoctorRequest(Base, TimestampMixin):
+    """Vrachning o'zi bot orqali yuborgan ro'yxatdan o'tish arizasi.
+
+    Tasdiqlanmaguncha vrach tizimda ko'rinmaydi va hech narsa ko'ra olmaydi.
+    """
+
+    __tablename__ = "doctor_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(
+        BigInteger, unique=True, index=True, nullable=False
+    )
+    telegram_username: Mapped[str | None] = mapped_column(String(64))
+    full_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    clinic_name: Mapped[str | None] = mapped_column(String(200))
+    region: Mapped[str | None] = mapped_column(String(80))
+    note: Mapped[str | None] = mapped_column(Text)
+
+    status: Mapped[RequestStatus] = mapped_column(
+        str_enum(RequestStatus, "request_status_enum"),
+        default=RequestStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    reviewed_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reject_reason: Mapped[str | None] = mapped_column(Text)
+    doctor_id: Mapped[int | None] = mapped_column(
+        ForeignKey("doctors.id", ondelete="SET NULL")
+    )
+
+
 class Visit(Base):
     """Agentning vrach oldiga tashrifi (geolokatsiya bilan)."""
 

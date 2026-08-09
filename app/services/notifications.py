@@ -198,6 +198,25 @@ async def check_low_stock(session: AsyncSession, product_ids: list[int]) -> None
     )
 
 
+async def doctor_request_created(session: AsyncSession, request) -> None:
+    """Vrach o'zi ariza yubordi — direktor va barcha agentlarga xabar."""
+    text = (
+        "🆕 <b>Yangi vrach arizasi</b>\n"
+        f"Ism: {request.full_name}\n"
+        f"Klinika: {request.clinic_name or '—'}\n"
+        f"Telefon: {request.phone}\n\n"
+        "Tasdiqlash yoki rad etish uchun ilovani oching."
+    )
+    await notify.send_to_roles(
+        session,
+        [Role.DIRECTOR, Role.SUPERADMIN, Role.AGENT],
+        text,
+        kind="doctor_request",
+        dedup_key=f"doctor_request:{request.id}",
+        button=("Arizani ko'rish", "/doctors"),
+    )
+
+
 async def welcome_new_user(session: AsyncSession, user: User) -> None:
     from app.models import ROLE_LABELS_UZ
 

@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCan, useCurrentUser } from '../App'
-import { useAgents, useBirthdays, useDoctors, useSaveDoctor } from '../api/hooks'
+import {
+  useAgents,
+  useBirthdays,
+  useDoctorRequests,
+  useDoctors,
+  useReviewRequest,
+  useSaveDoctor,
+} from '../api/hooks'
 import { api } from '../api/client'
-import type { Doctor } from '../api/types'
+import type { Doctor, DoctorRequest } from '../api/types'
 import { CATEGORY_LABELS, daysAgo, shortDate, usd } from '../lib/format'
 import { alertUser, haptic } from '../lib/telegram'
 import {
@@ -220,6 +227,172 @@ export function DoctorForm({
   )
 }
 
+function RequestsPanel() {
+  const me = useCurrentUser()
+  const { data, isLoading } = useDoctorRequests()
+  const { data: agents } = useAgents()
+  const review = useReviewRequest()
+  const [selected, setSelected] = useState<DoctorRequest | null>(null)
+  const [agentId, setAgentId] = useState<number | undefined>()
+  const [limit, setLimit] = useState('')
+  const [term, setTerm] = useState('')
+
+  const isAgent = me.role === 'agent'
+
+  async function approve() {
+    if (!selected) return
+    if (!isAgent && !agentId) {
+      alertUser('Qaysi agentga biriktirishni tanlang')
+      return
+    }
+    try {
+      await review.mutateAsync({
+        id: selected.id,
+        action: 'approve',
+        body: {
+          agent_id: isAgent ? undefined : agentId,
+          debt_limit_usd: limit ? Number(limit) : undefined,
+          payment_term_days: term ? Number(term) : undefined,
+        },
+      })
+      haptic('success')
+      alertUser(`${selected.full_name} tasdiqlandi va tizimga qo'shildi`)
+      setSelected(null)
+      setLimit('')
+      setTerm('')
+    } catch (err) {
+      alertUser(err instanceof Error ? err.message : 'Xatolik')
+    }
+  }
+
+  async function reject() {
+    if (!selected) return
+    try {
+      await review.mutateAsync({ id: selected.id, action: 'reject', body: {} })
+      haptic('success')
+      setSelected(null)
+    } catch (err) {
+      alertUser(err instanceof Error ? err.message : 'Xatolik')
+    }
+  }
+
+  if (isLoading) return <Loading />
+  if (!data?.length) return <Empty text="Yangi ariza yo'q" />
+
+  return (
+    <>
+      <div className="space-y-2">
+        {data.map((request) => (
+          <Card key={request.id} onClick={() => setSelected(request)}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-[14px] font-semibold">
+                  {request.full_name}
+                </div>
+                <div className="truncate text-[12px] text-[var(--muted)]">
+                  {request.clinic_name ?? '—'} · {request.phone}
+                </div>
+                <div className="mt-1.5">
+                  <Chip color="var(--warn)">⏳ Tasdiq kutilmoqda</Chip>
+                </div>
+              </div>
+              <div className="shrink-0 text-[12px] text-[var(--muted)]">
+                {shortDate(request.created_at)}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Sheet
+        open={Boolean(selected)}
+        title={selected?.full_name ?? ''}
+        onClose={() => setSelected(null)}
+      >
+        {selected ? (
+          <>
+            <Card className="mb-3 p-0">
+              <div className="p-3 text-[13px]">
+                <div className="mb-1">
+                  <span className="text-[var(--muted)]">Klinika: </span>
+                  {selected.clinic_name ?? '—'}
+                </div>
+                <div className="mb-1">
+                  <span className="text-[var(--muted)]">Telefon: </span>
+                  {selected.phone}
+                </div>
+                <div>
+                  <span className="text-[var(--muted)]">Telegram: </span>
+                  {selected.telegram_username
+                    ? `@${selected.telegram_username}`
+                    : selected.telegram_id}
+                </div>
+              </div>
+            </Card>
+
+            {!isAgent ? (
+              <Field label="Qaysi agentga biriktiriladi">
+                <select
+                  className="select"
+                  value={agentId ?? ''}
+                  onChange={(e) => setAgentId(Number(e.target.value))}
+                >
+                  <option value="">Tanlang</option>
+                  {(agents ?? []).map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.full_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <div className="mb-3 text-[13px] text-[var(--muted)]">
+                Tasdiqlasangiz bu vrach sizga biriktiriladi.
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Qarz limiti (USD)" hint="Bo'sh qoldirsangiz standart">
+                <input
+                  className="input"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={limit}
+                  onChange={(e) => setLimit(e.target.value)}
+                />
+              </Field>
+              <Field label="To'lov muddati (kun)" hint="Bo'sh qoldirsangiz standart">
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  placeholder="30"
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                />
+              </Field>
+            </div>
+
+            <button
+              className="btn btn-primary mb-2 w-full"
+              disabled={review.isPending}
+              onClick={approve}
+            >
+              ✅ Tasdiqlash va qo'shish
+            </button>
+            <button
+              className="btn btn-danger w-full"
+              disabled={review.isPending}
+              onClick={reject}
+            >
+              ✕ Rad etish
+            </button>
+          </>
+        ) : null}
+      </Sheet>
+    </>
+  )
+}
+
 export default function Doctors() {
   const navigate = useNavigate()
   const can = useCan()
@@ -237,6 +410,7 @@ export default function Doctors() {
   )
   const { data, isLoading, error } = useDoctors(params)
   const { data: birthdays } = useBirthdays(14)
+  const { data: requests } = useDoctorRequests()
 
   const rows = tab === 'birthdays' ? (birthdays ?? []) : (data ?? [])
 
@@ -265,11 +439,18 @@ export default function Doctors() {
           { key: 'debtors', label: 'Qarzdorlar' },
           { key: 'overdue', label: 'Muddati o‘tgan' },
           { key: 'birthdays', label: `🎂 ${birthdays?.length ?? 0}` },
+          ...(can('doctors.edit')
+            ? [{ key: 'requests', label: `📨 Arizalar${requests?.length ? ` (${requests.length})` : ''}` }]
+            : []),
         ]}
         active={tab}
         onChange={setTab}
       />
 
+      {tab === 'requests' ? <RequestsPanel /> : null}
+
+      {tab !== 'requests' ? (
+        <>
       <button
         className="btn btn-sm mb-3 w-full"
         onClick={() => api.download('/reports/export.xlsx', { kind: 'doctors' })}
@@ -331,6 +512,8 @@ export default function Doctors() {
           )
         })}
       </div>
+        </>
+      ) : null}
 
       <DoctorForm
         open={Boolean(editing)}

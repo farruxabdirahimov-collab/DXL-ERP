@@ -6,6 +6,7 @@ import type {
   Dashboard,
   DebtRow,
   Doctor,
+  DoctorRequest,
   Me,
   OkResponse,
   Order,
@@ -156,6 +157,32 @@ export const useSleepingDoctors = () =>
     queryKey: ['sleeping-doctors'],
     queryFn: () => api.get<Doctor[]>('/doctors/sleeping'),
   })
+
+export const useDoctorRequests = () =>
+  useQuery({
+    queryKey: ['doctor-requests'],
+    queryFn: () => api.get<DoctorRequest[]>('/doctors/requests'),
+    refetchInterval: 60_000,
+  })
+
+export const useReviewRequest = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      action,
+      body,
+    }: {
+      id: number
+      action: 'approve' | 'reject'
+      body?: unknown
+    }) => api.post(`/doctors/requests/${id}/${action}`, body ?? {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['doctor-requests'] })
+      qc.invalidateQueries({ queryKey: ['doctors'] })
+    },
+  })
+}
 
 export const useSaveDoctor = () => {
   const qc = useQueryClient()

@@ -6,6 +6,8 @@ import logging
 
 from aiogram import F, Router
 from aiogram.filters import Command, CommandObject, CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
     KeyboardButton,
     Message,
@@ -16,10 +18,25 @@ from sqlalchemy import select
 
 from app.bot.notify import webapp_button
 from app.db import session_scope
-from app.models import ROLE_LABELS_UZ, Doctor, Invite, Role, User, utcnow
+from app.models import (
+    ROLE_LABELS_UZ,
+    Doctor,
+    DoctorRequest,
+    Invite,
+    RequestStatus,
+    Role,
+    User,
+    utcnow,
+)
 
 log = logging.getLogger(__name__)
 router = Router()
+
+
+class DoctorSignup(StatesGroup):
+    """Vrach o'zi ro'yxatdan o'tayotganda klinika nomini so'raymiz."""
+
+    clinic = State()
 
 CONTACT_KB = ReplyKeyboardMarkup(
     keyboard=[
@@ -139,7 +156,7 @@ async def start(message: Message) -> None:
 
 
 @router.message(F.contact)
-async def link_doctor_by_contact(message: Message) -> None:
+async def link_doctor_by_contact(message: Message, state: FSMContext) -> None:
     """Vrach o'z telefon raqamini yuboradi — kartochkasiga ulanadi."""
     contact = message.contact
     if contact.user_id and contact.user_id != message.from_user.id:
@@ -167,11 +184,7 @@ async def link_doctor_by_contact(message: Message) -> None:
         )
 
         if doctor is None:
-            await message.answer(
-                "❌ Bu raqam bilan vrach topilmadi.\n"
-                "Sizga xizmat ko'rsatuvchi agentga murojaat qiling — u sizni tizimga qo'shadi.",
-                reply_markup=ReplyKeyboardRemove(),
-            )
+            await _create_signup_request(message, phone, state)
             return
 
         if doctor.user_id:
@@ -200,6 +213,90 @@ async def link_doctor_by_contact(message: Message) -> None:
             "✅ Kartochkangiz topildi va ulandi!", reply_markup=ReplyKeyboardRemove()
         )
         await _open_app_message(message, user)
+
+
+async def _create_signup_request(
+    message: Message, phone: str, state: FSMContext
+) -> None:
+    """Vrach topilmadi — ro'yxatdan o'tish arizasini boshlaymiz."""
+    tg_id = message.from_user.id
+    full_name = " ".join(
+        p for p in (message.from_user.first_name, message.from_user.last_name) if p
+    ) or f"Vrach {tg_id}"
+
+    async with session_scope() as session:
+        existing = (
+            await session.execute(
+                select(DoctorRequest).where(DoctorRequest.telegram_id == tg_id)
+            )
+        ).scalar_one_or_none()
+
+        if existing is not None and existing.status is RequestStatus.PENDING:
+            await message.answer(
+                "⏳ Arizangiz allaqachon yuborilgan va ko'rib chiqilmoqda.\n"
+                "Tasdiqlangach sizga xabar keladi.",
+                reply_markup=ReplyKeyboardRemove(),
+            )
+            return
+
+        if existing is not None:
+            existing.status = RequestStatus.PENDING
+            existing.phone = phone
+            existing.full_name = full_name
+            existing.reject_reason = None
+            request = existing
+        else:
+            request = DoctorRequest(
+                telegram_id=tg_id,
+                telegram_username=message.from_user.username,
+                full_name=full_name,
+                phone=phone,
+                status=RequestStatus.PENDING,
+            )
+            session.add(request)
+        await session.flush()
+
+    await state.set_state(DoctorSignup.clinic)
+    await message.answer(
+        "📝 <b>Ro'yxatdan o'tish</b>\n\n"
+        "Ishlaydigan <b>klinikangiz nomini</b> va shahringizni yozing.\n"
+        "Masalan: <i>«Smile» klinikasi, Toshkent</i>",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+
+
+@router.message(DoctorSignup.clinic, F.text)
+async def signup_clinic(message: Message, state: FSMContext) -> None:
+    """Klinika nomini saqlaymiz va arizani xodimlarga yuboramiz."""
+    clinic = (message.text or "").strip()[:200]
+    tg_id = message.from_user.id
+
+    async with session_scope() as session:
+        request = (
+            await session.execute(
+                select(DoctorRequest).where(DoctorRequest.telegram_id == tg_id)
+            )
+        ).scalar_one_or_none()
+        if request is None:
+            await state.clear()
+            await message.answer("Arizangiz topilmadi. /start bosib qaytadan boshlang.")
+            return
+
+        request.clinic_name = clinic
+        await session.flush()
+
+        from app.services import notifications
+
+        await notifications.doctor_request_created(session, request)
+
+    await state.clear()
+    await message.answer(
+        "✅ <b>Arizangiz yuborildi!</b>\n\n"
+        f"Ism: {message.from_user.first_name or '—'}\n"
+        f"Klinika: {clinic}\n\n"
+        "Xodimlarimiz tez orada ko'rib chiqadi. Tasdiqlangach sizga xabar keladi "
+        "va ilovadan foydalana boshlaysiz."
+    )
 
 
 @router.message(Command("id"))

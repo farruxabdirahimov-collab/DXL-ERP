@@ -328,3 +328,18 @@ export interface OkResponse {
   ok: boolean
   message?: string | null
 }
+
+export interface DoctorRequest {
+  id: number
+  created_at: string
+  telegram_id: number
+  telegram_username: string | null
+  full_name: string
+  phone: string
+  clinic_name: string | null
+  region: string | null
+  note: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  reject_reason: string | null
+  doctor_id: number | null
+}

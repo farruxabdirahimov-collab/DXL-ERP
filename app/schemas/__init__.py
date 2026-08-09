@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import (
     DoctorCategory,
+    RequestStatus,
     OrderSource,
     OrderStatus,
     PaymentMethod,
@@ -278,6 +279,32 @@ class DoctorUpdateIn(DoctorIn):
     phone: str | None = None
     is_active: bool | None = None
     credit_block_override: bool | None = None
+
+
+class DoctorRequestOut(ORMModel):
+    id: int
+    created_at: datetime
+    telegram_id: int
+    telegram_username: str | None
+    full_name: str
+    phone: str
+    clinic_name: str | None
+    region: str | None
+    note: str | None
+    status: RequestStatus
+    reject_reason: str | None
+    doctor_id: int | None
+
+
+class ApproveRequestIn(BaseModel):
+    agent_id: int | None = None
+    debt_limit_usd: Decimal | None = Field(default=None, ge=0)
+    payment_term_days: int | None = Field(default=None, ge=0, le=365)
+    region: str | None = None
+
+
+class RejectRequestIn(BaseModel):
+    reason: str | None = None
 
 
 # ------------------------------------------------------------------- orders
