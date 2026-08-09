@@ -31,10 +31,28 @@ def get_bot() -> Bot | None:
 def get_dispatcher() -> Dispatcher:
     global _dp
     if _dp is None:
+        from aiogram.types import ErrorEvent
+
         from app.bot.handlers import start
 
         _dp = Dispatcher(storage=MemoryStorage())
         _dp.include_router(start.router)
+
+        @_dp.errors()
+        async def on_error(event: ErrorEvent) -> bool:
+            """Har qanday xatoni logga yozadi va foydalanuvchini jim qoldirmaydi."""
+            log.exception("Bot xatosi: %s", event.exception)
+            message = getattr(event.update, "message", None)
+            if message is not None:
+                try:
+                    await message.answer(
+                        "⚠️ Texnik nosozlik yuz berdi. Biroz kutib qayta urinib ko'ring.\n"
+                        "Muammo davom etsa rahbaringizga xabar bering."
+                    )
+                except Exception:  # javob ham ketmasa — faqat logda qoladi
+                    log.exception("Xato haqida xabar yuborilmadi")
+            return True
+
     return _dp
 
 

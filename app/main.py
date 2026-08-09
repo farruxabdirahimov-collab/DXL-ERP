@@ -188,6 +188,67 @@ async def ready() -> JSONResponse:
     return JSONResponse(payload, status_code=200 if STATE["ready"] else 503)
 
 
+@app.get("/api/diagnostics")
+async def diagnostics() -> dict:
+    """Sozlash bosqichida muammoni topish uchun. Maxfiy qiymatlar ko'rsatilmaydi."""
+    from sqlalchemy import func, select
+
+    result: dict = {
+        "version": __version__,
+        "state": dict(STATE),
+        "config": {
+            "bot_token_sozlangan": bool(settings.bot_token),
+            "webapp_url": settings.webapp_url,
+            "webhook_secret_sozlangan": settings.webhook_secret != "dxl-erp-secret",
+            "superadmin_telegram_id": settings.superadmin_telegram_id or None,
+            "database_url_sozlangan": "localhost" not in settings.database_url,
+            "tz": settings.tz,
+            "auto_migrate": settings.auto_migrate,
+        },
+        "mini_app_yigilgan": WEB_DIST.exists(),
+    }
+
+    # --- Baza holati ---
+    try:
+        from app.db import session_scope
+        from app.models import Product, User
+
+        async with session_scope() as session:
+            users = (await session.execute(select(func.count(User.id)))).scalar_one()
+            products = (
+                await session.execute(select(func.count(Product.id)))
+            ).scalar_one()
+        result["baza"] = {
+            "ulanish": "ok",
+            "foydalanuvchilar": int(users),
+            "mahsulotlar": int(products),
+        }
+    except Exception as exc:
+        result["baza"] = {"ulanish": "xato", "sabab": str(exc)[:300]}
+
+    # --- Telegram webhook holati ---
+    from app.bot.bot import get_bot
+
+    bot = get_bot()
+    if bot is None:
+        result["telegram"] = {"holat": "BOT_TOKEN sozlanmagan"}
+    else:
+        try:
+            info = await asyncio.wait_for(bot.get_webhook_info(), timeout=15)
+            result["telegram"] = {
+                "holat": "ok",
+                "webhook_url": info.url or "(o'rnatilmagan)",
+                "kutayotgan_xabarlar": info.pending_update_count,
+                "oxirgi_xato": info.last_error_message,
+                "kutilgan_url": f"{settings.webapp_url}/tg/webhook",
+                "url_mos": info.url == f"{settings.webapp_url}/tg/webhook",
+            }
+        except Exception as exc:
+            result["telegram"] = {"holat": "xato", "sabab": str(exc)[:300]}
+
+    return result
+
+
 @app.post("/tg/webhook")
 async def telegram_webhook(
     request: Request,
