@@ -433,14 +433,14 @@ function StockActionSheet({
               <div className="min-w-0 flex-1 truncate text-[13px]">{line.name}</div>
               {action === 'adjust' ? (
                 <input
-                  className="input w-24 text-right"
+                  className="input w-24 shrink-0 text-right"
                   inputMode="numeric"
                   value={adjustQty}
                   onChange={(e) => setAdjustQty(e.target.value)}
                 />
               ) : (
                 <input
-                  className="input w-20 text-right"
+                  className="input w-20 shrink-0 text-right"
                   inputMode="numeric"
                   value={line.qty}
                   onChange={(e) => setQty(line.product_id, Number(e.target.value))}

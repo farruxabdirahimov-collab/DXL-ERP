@@ -268,15 +268,16 @@ export default function OrderPage() {
               className="flex items-center gap-2 border-b border-[var(--border)] p-3 last:border-b-0"
             >
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-semibold">
+                {/* Razmer nomning ichida — qisqartirmaymiz, ko'chirib yozamiz */}
+                <div className="text-[13px] font-semibold leading-snug">
                   {item.product_name}
                 </div>
-                <div className="text-[12px] text-[var(--muted)]">
+                <div className="mt-0.5 text-[12px] text-[var(--muted)]">
                   Sotilgan: {item.qty} dona · {usd(item.price_usd)}
                 </div>
               </div>
               <input
-                className="input w-20 text-center"
+                className="input w-20 shrink-0 text-center"
                 inputMode="numeric"
                 placeholder="0"
                 value={returnQty[item.product_id] ?? ''}

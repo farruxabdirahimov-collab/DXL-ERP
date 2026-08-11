@@ -210,7 +210,7 @@ export default function NewOrder() {
                     −
                   </button>
                   <input
-                    className="input w-20 text-center"
+                    className="input w-20 shrink-0 text-center"
                     inputMode="numeric"
                     value={line.qty}
                     onChange={(e) => setQty(line.product_id, Number(e.target.value))}
