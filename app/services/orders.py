@@ -25,6 +25,7 @@ from app.models import (
     Warehouse,
     utcnow,
 )
+from app.permissions import ORDERS_DIRECTOR, user_can
 from app.services import stock as stock_service
 from app.services.debt import compute_due_date, credit_check
 from app.services.fx import get_rate, round_money, today_local
@@ -184,7 +185,10 @@ async def approve(session: AsyncSession, order: Order, actor: User) -> Order:
     if order.status not in (OrderStatus.NEW, OrderStatus.DIRECTOR_REVIEW):
         raise OrderError(f"Bu holatda tasdiqlab bo'lmaydi: {order.status.value}")
 
-    is_director = actor.role in (Role.DIRECTOR, Role.SUPERADMIN)
+    # Ruxsat bo'yicha tekshiramiz, asosiy rol bo'yicha emas: bitta xodimda
+    # bir necha vazifa bo'lsa (agent + direktor), direktorlik huquqini
+    # qo'shimcha roldan oladi va buyurtma osilib qolmaydi.
+    is_director = user_can(actor, ORDERS_DIRECTOR)
 
     if order.status is OrderStatus.NEW:
         if order.needs_director and not is_director:

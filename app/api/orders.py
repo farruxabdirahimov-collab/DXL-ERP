@@ -215,9 +215,21 @@ async def approve_order(
     except (orders_service.OrderError, stock_service.StockError) as exc:
         raise HTTPException(400, str(exc)) from exc
 
+    details: dict = {"status": order.status.value}
+    # Bitta xodim ham agent, ham direktor bo'lsa — o'zi yozgan chegirmali
+    # buyurtmani o'zi tasdiqlashi mumkin. Buni bekor qilmaymiz (aks holda
+    # direktor bitta bo'lsa buyurtma osilib qoladi), lekin audit jurnalida
+    # ko'rinib turadi — ta'sischi va super-admin nazorat qila oladi.
+    if (
+        order.status is OrderStatus.APPROVED
+        and order.needs_director
+        and order.agent_id == user.id
+    ):
+        details["ozini_ozi_tasdiqladi"] = True
+
     await log_action(
         session, user, "approve", "order", order.id,
-        old={"status": previous.value}, new={"status": order.status.value},
+        old={"status": previous.value}, new=details,
     )
     if order.status is OrderStatus.DIRECTOR_REVIEW:
         await notifications.order_needs_director(session, order)

@@ -7,23 +7,40 @@ export interface NavItem {
   icon: string
 }
 
-/** Rolga qarab pastki menyu (eng ko'p 5 ta bo'lim). */
-const EXTRA_ITEMS: Record<string, NavItem> = {
+/** Har bir vazifaning "o'z" bo'limi — bir necha rolli xodim menyusi shundan yig'iladi. */
+const ROLE_ITEMS: Record<string, NavItem> = {
+  agent: { to: '/doctors', label: 'Vrachlar', icon: '🧑‍⚕️' },
   warehouse: { to: '/stock', label: 'Ombor', icon: '📦' },
   accountant: { to: '/debts', label: 'Qarzlar', icon: '💳' },
-  agent: { to: '/doctors', label: 'Vrachlar', icon: '🧑‍⚕️' },
   director: { to: '/reports', label: 'Hisobot', icon: '📈' },
+  superadmin: { to: '/reports', label: 'Hisobot', icon: '📈' },
+  founder: { to: '/reports', label: 'Hisobot', icon: '📈' },
 }
 
-/** Asosiy rol menyuni belgilaydi, qo'shimcha rollar unga qo'shiladi. */
-export function navFor(me: Me): NavItem[] {
-  const base = baseNavFor(me)
-  if (!me.extra_roles?.length) return base
+/** Kundalik ish uchun qaysi vazifa muhimroq — joy yetmasa shu tartibda beriladi. */
+const ROLE_ORDER = ['agent', 'warehouse', 'accountant', 'director', 'superadmin', 'founder']
 
-  const items = base.filter((item) => item.to !== '/more')
-  for (const role of me.extra_roles) {
-    const extra = EXTRA_ITEMS[role]
-    if (extra && !items.some((item) => item.to === extra.to)) items.push(extra)
+/**
+ * Asosiy rol menyuni belgilaydi. Bitta xodimda bir necha vazifa bo'lsa,
+ * menyu qayta yig'iladi: umumiy ikkita bo'lim + har bir vazifadan bittadan.
+ *
+ * Rol almashtirish yo'q — hamma bo'lim bir vaqtda ochiq turadi. Pastda
+ * 4 tagina joy bor, sig'magani "Yana" ichida qoladi.
+ */
+export function navFor(me: Me): NavItem[] {
+  const extras = me.extra_roles ?? []
+  if (!extras.length || me.role === 'doctor') return baseNavFor(me)
+
+  const items: NavItem[] = [
+    { to: '/', label: 'Bosh', icon: '📊' },
+    { to: '/orders', label: 'Buyurtma', icon: '📋' },
+  ]
+  const roles = [me.role, ...extras].sort(
+    (a, b) => ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b),
+  )
+  for (const role of roles) {
+    const item = ROLE_ITEMS[role]
+    if (item && !items.some((existing) => existing.to === item.to)) items.push(item)
   }
   // Pastki menyuda eng ko'pi 5 ta joy bor, oxirgisi doim "Yana"
   return [...items.slice(0, 4), { to: '/more', label: 'Yana', icon: '☰' }]

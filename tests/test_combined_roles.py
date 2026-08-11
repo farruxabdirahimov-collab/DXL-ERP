@@ -125,6 +125,66 @@ async def test_agent_omborchi_toliq_zanjirni_bajaradi(session, base_data):
     assert any(o.id == order.id for o in rows)
 
 
+async def test_uch_rolli_xodim_chegirmani_ozi_tasdiqlaydi(session, base_data):
+    """Agent + direktor + omborchi: buyurtma direktor tasdig'ida osilib qolmasin."""
+    from decimal import Decimal
+
+    from sqlalchemy import select
+
+    from app.api.orders import approve_order
+    from app.models import AuditLog, OrderStatus
+    from app.services import orders as orders_service, stock as stock_service
+    from app.services.orders import LineInput
+
+    combo = User(
+        full_name="Aziz (agent + direktor + omborchi)",
+        role=Role.AGENT,
+        extra_roles=["director", "warehouse"],
+        telegram_id=880002,
+    )
+    session.add(combo)
+    await session.flush()
+
+    doctor = base_data["doctor"]
+    doctor.agent_id = combo.id
+    await session.flush()
+
+    await stock_service.apply_move(
+        session,
+        kind=MoveKind.IN,
+        product_id=base_data["implant"].id,
+        qty=10,
+        to_warehouse_id=base_data["warehouse"].id,
+        doc_type="receipt",
+        doc_id=1,
+    )
+
+    # Katta chegirma — odatda direktor tasdig'iga ketadi
+    order = await orders_service.create_order(
+        session,
+        doctor=doctor,
+        lines=[LineInput(base_data["implant"].id, 2, Decimal("40"))],
+        actor=combo,
+        source=OrderSource.AGENT,
+        warehouse_id=base_data["warehouse"].id,
+    )
+    assert order.needs_director, "chegirma direktor tasdig'ini talab qilishi kerak"
+
+    # Direktorlik qo'shimcha roldan kelgani uchun bir bosishda tasdiqlanadi
+    result = await approve_order(order.id, session, combo)
+    assert result.status is OrderStatus.APPROVED
+
+    # ...lekin bu audit jurnalida belgilanadi
+    rows = (
+        await session.execute(
+            select(AuditLog).where(
+                AuditLog.entity == "order", AuditLog.action == "approve"
+            )
+        )
+    ).scalars().all()
+    assert any((r.new_value or {}).get("ozini_ozi_tasdiqladi") for r in rows)
+
+
 async def test_oddiy_agent_yetkazish_himoyasiga_urilmaydi(base_data):
     """Endpointni himoyalovchi tekshiruv qo'shimcha rolsiz agentni o'tkazmaydi."""
     from app.auth import require_perm
