@@ -183,3 +183,6 @@ sodiqlik/A-B-C formulasi, reja foizi, Telegram imzo tekshiruvi va rol huquqlari 
 - **Har so'rovda `initData` qayta tekshiriladi** — sessiya yoki token saqlanmaydi
 - **Ruxsatlar bitta manbadan** — `app/permissions.py`; backend endpointni himoyalaydi,
   frontend menyuni shunga qarab chizadi
+- **Qaytarilgan tovar hech qayerda sotilgan bo'lib qolmaydi** — qaytarish ombor,
+  qarz, sotuv hisoboti, agent rejasi va vrachning xarid darajasini bir vaqtda
+  to'g'rilaydi ([qo'llanma](docs/qaytarish.md))
