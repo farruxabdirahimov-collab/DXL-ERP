@@ -223,10 +223,18 @@ async def create_return(
     doctor = await session.get(Doctor, payload.doctor_id)
     if doctor is None:
         raise HTTPException(404, "Vrach topilmadi")
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
+        raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
 
     warehouse_id = payload.warehouse_id
     if warehouse_id is None:
-        warehouse_id = (await stock_service.main_warehouse(session)).id
+        # Tovar qaytgan omborga qaytadi: buyurtma qaysi ombordan ketgan bo'lsa,
+        # o'shanga. Aks holda markaziy omborga.
+        if payload.order_id:
+            order = await session.get(Order, payload.order_id)
+            warehouse_id = order.warehouse_id if order else None
+        if warehouse_id is None:
+            warehouse_id = (await stock_service.main_warehouse(session)).id
 
     try:
         doc = await inventory_ops.create_return(
@@ -247,5 +255,9 @@ async def create_return(
     )
     return OkOut(
         ok=True,
-        message=f"Qaytarish rasmiylashtirildi: {doc.number} (${doc.total_usd})",
+        message=(
+            f"Qaytarish rasmiylashtirildi: {doc.number}\n"
+            f"Summa ${doc.total_usd} — vrachning qarzidan ayirildi, "
+            "tovar omborga qaytdi"
+        ),
     )

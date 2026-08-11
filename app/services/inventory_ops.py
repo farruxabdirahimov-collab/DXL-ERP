@@ -68,11 +68,16 @@ async def create_return(
                     f"Qaytarish miqdori sotilganidan ko'p (#{product_id})"
                 )
 
+    # Qaytarish qaysi agent hisobidan ayirilishini aniqlaymiz:
+    # buyurtma bo'lsa — o'shaning agenti, aks holda vrachning agenti
+    agent_id = order.agent_id if order is not None else doctor.agent_id
+
     doc = Return(
         number=await next_number(session, "return"),
         doctor_id=doctor.id,
         order_id=order_id,
         warehouse_id=warehouse_id,
+        agent_id=agent_id,
         reason=reason,
         created_by_id=actor.id,
     )
@@ -113,6 +118,11 @@ async def create_return(
         order.returned_usd = round_money(Decimal(order.returned_usd) + doc.total_usd)
         if order.paid_usd + order.returned_usd >= order.total_usd:
             order.closed_at = utcnow()
+
+    # Vrachning umumiy xaridi ham kamayadi — aks holda toifasi shishib qoladi
+    doctor.total_purchased_usd = round_money(
+        max(Decimal("0"), Decimal(doctor.total_purchased_usd) - doc.total_usd)
+    )
 
     await session.flush()
     return doc

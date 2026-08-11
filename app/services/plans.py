@@ -14,7 +14,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Order, OrderItem, OrderStatus, Payment, Role, SalesPlan, User
+from app.models import (
+    Order,
+    OrderItem,
+    OrderStatus,
+    Payment,
+    Return,
+    ReturnItem,
+    Role,
+    SalesPlan,
+    User,
+)
 from app.services.fx import round_money, today_local
 
 ZERO = Decimal("0.00")
@@ -138,9 +148,31 @@ async def agent_facts(
         )
     ).scalar_one()
 
+    # Qaytarilgan tovar reja bajarilishidan ayiriladi
+    returned_amount = (
+        await session.execute(
+            select(func.coalesce(func.sum(Return.total_usd), 0)).where(
+                Return.agent_id == user_id,
+                Return.created_at >= start,
+                Return.created_at <= end,
+            )
+        )
+    ).scalar_one()
+    returned_units = (
+        await session.execute(
+            select(func.coalesce(func.sum(ReturnItem.qty), 0))
+            .join(Return, Return.id == ReturnItem.return_id)
+            .where(
+                Return.agent_id == user_id,
+                Return.created_at >= start,
+                Return.created_at <= end,
+            )
+        )
+    ).scalar_one()
+
     return (
-        round_money(Decimal(amount or 0)),
-        int(units or 0),
+        round_money(Decimal(amount or 0) - Decimal(returned_amount or 0)),
+        int(units or 0) - int(returned_units or 0),
         round_money(Decimal(collection or 0)),
     )
 

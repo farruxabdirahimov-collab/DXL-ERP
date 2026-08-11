@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCan, useCurrentUser } from '../App'
-import { useOrder, useOrderAction } from '../api/hooks'
+import { useCreateReturn, useOrder, useOrderAction } from '../api/hooks'
 import { api } from '../api/client'
 import { STATUS_COLORS, dateTime, num, shortDate, usd, uzs } from '../lib/format'
 import { alertUser, confirmUser, haptic } from '../lib/telegram'
@@ -28,6 +28,10 @@ export default function OrderPage() {
   const action = useOrderAction()
   const [cancelOpen, setCancelOpen] = useState(false)
   const [reason, setReason] = useState('')
+  const [returnOpen, setReturnOpen] = useState(false)
+  const [returnQty, setReturnQty] = useState<Record<number, number>>({})
+  const [returnReason, setReturnReason] = useState('')
+  const createReturn = useCreateReturn()
 
   if (isLoading) return <Loading />
   if (error) return <ErrorBox error={error} />
@@ -38,6 +42,35 @@ export default function OrderPage() {
     try {
       await action.mutateAsync({ id: orderId, action: name })
       haptic('success')
+    } catch (err) {
+      alertUser(err instanceof Error ? err.message : 'Xatolik')
+    }
+  }
+
+  async function submitReturn() {
+    const lines = Object.entries(returnQty)
+      .filter(([, qty]) => qty > 0)
+      .map(([productId, qty]) => ({ product_id: Number(productId), qty }))
+    if (lines.length === 0) {
+      alertUser('Nechta dona qaytarilayotganini kiriting')
+      return
+    }
+    if (!returnReason.trim()) {
+      alertUser('Qaytarish sababini yozing')
+      return
+    }
+    try {
+      const result = await createReturn.mutateAsync({
+        doctor_id: order!.doctor_id,
+        order_id: order!.id,
+        reason: returnReason,
+        lines,
+      })
+      haptic('success')
+      alertUser(result.message ?? 'Qaytarish rasmiylashtirildi')
+      setReturnOpen(false)
+      setReturnQty({})
+      setReturnReason('')
     } catch (err) {
       alertUser(err instanceof Error ? err.message : 'Xatolik')
     }
@@ -201,6 +234,12 @@ export default function OrderPage() {
           </button>
         ) : null}
 
+        {order.status === 'delivered' && can('returns.create') ? (
+          <button className="btn w-full" onClick={() => setReturnOpen(true)}>
+            ↩️ Tovarni qaytarish (vozvrat)
+          </button>
+        ) : null}
+
         {isOpen ? (
           <button className="btn btn-danger w-full" onClick={() => setCancelOpen(true)}>
             ✕ Bekor qilish
@@ -211,6 +250,62 @@ export default function OrderPage() {
           ← Ro‘yxatga qaytish
         </button>
       </div>
+
+      <Sheet
+        open={returnOpen}
+        title="Tovarni qaytarish"
+        onClose={() => setReturnOpen(false)}
+      >
+        <p className="mb-3 text-[13px] text-[var(--muted)]">
+          Nechta dona qaytarilayotganini kiriting. Tovar omborga qaytadi,
+          summa vrachning qarzidan ayiriladi va hisobotlardan chiqariladi.
+        </p>
+
+        <Card className="mb-3 p-0">
+          {order.items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 border-b border-[var(--border)] p-3 last:border-b-0"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-semibold">
+                  {item.product_name}
+                </div>
+                <div className="text-[12px] text-[var(--muted)]">
+                  Sotilgan: {item.qty} dona · {usd(item.price_usd)}
+                </div>
+              </div>
+              <input
+                className="input w-20 text-center"
+                inputMode="numeric"
+                placeholder="0"
+                value={returnQty[item.product_id] ?? ''}
+                onChange={(e) => {
+                  const value = Math.min(item.qty, Math.max(0, Number(e.target.value) || 0))
+                  setReturnQty({ ...returnQty, [item.product_id]: value })
+                }}
+              />
+            </div>
+          ))}
+        </Card>
+
+        <Field label="Sabab (majburiy)" hint="Masalan: qadoq shikastlangan, razmer mos kelmadi">
+          <textarea
+            className="textarea"
+            rows={2}
+            value={returnReason}
+            onChange={(e) => setReturnReason(e.target.value)}
+          />
+        </Field>
+
+        <button
+          className="btn btn-primary w-full"
+          disabled={createReturn.isPending}
+          onClick={submitReturn}
+        >
+          {createReturn.isPending ? 'Rasmiylashtirilmoqda…' : '↩️ Qaytarishni tasdiqlash'}
+        </button>
+      </Sheet>
 
       <Sheet
         open={cancelOpen}

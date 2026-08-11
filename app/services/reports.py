@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import (
     Doctor,
+    Return,
+    ReturnItem,
     Order,
     OrderItem,
     OrderStatus,
@@ -40,6 +42,61 @@ def day_bounds(day: date) -> tuple[datetime, datetime]:
 
 def month_start(day: date) -> datetime:
     return datetime.combine(day.replace(day=1), time.min, tzinfo=settings.timezone)
+
+
+def _returned_between(start: datetime, end: datetime):
+    """Davr ichida rasmiylashtirilgan qaytarishlar."""
+    return and_(Return.created_at >= start, Return.created_at <= end)
+
+
+async def returns_summary(
+    session: AsyncSession, start: datetime, end: datetime, agent_id: int | None = None
+) -> dict:
+    """Davrdagi qaytarishlar: summa va dona."""
+    conditions = [_returned_between(start, end)]
+    if agent_id is not None:
+        conditions.append(Return.agent_id == agent_id)
+
+    amount = (
+        await session.execute(
+            select(func.coalesce(func.sum(Return.total_usd), 0)).where(*conditions)
+        )
+    ).scalar_one()
+    units = (
+        await session.execute(
+            select(func.coalesce(func.sum(ReturnItem.qty), 0))
+            .join(Return, Return.id == ReturnItem.return_id)
+            .where(*conditions)
+        )
+    ).scalar_one()
+    count = (
+        await session.execute(select(func.count(Return.id)).where(*conditions))
+    ).scalar_one()
+
+    return {
+        "amount_usd": round_money(Decimal(amount or 0)),
+        "units": int(units or 0),
+        "count": int(count or 0),
+    }
+
+
+async def returned_by_product(
+    session: AsyncSession, start: datetime, end: datetime
+) -> dict[int, tuple[int, Decimal]]:
+    """Mahsulot bo'yicha qaytarilgan dona va summa — tahlildan ayirish uchun."""
+    rows = (
+        await session.execute(
+            select(
+                ReturnItem.product_id,
+                func.coalesce(func.sum(ReturnItem.qty), 0),
+                func.coalesce(func.sum(ReturnItem.line_total_usd), 0),
+            )
+            .join(Return, Return.id == ReturnItem.return_id)
+            .where(_returned_between(start, end))
+            .group_by(ReturnItem.product_id)
+        )
+    ).all()
+    return {int(pid): (int(qty or 0), Decimal(amount or 0)) for pid, qty, amount in rows}
 
 
 def _delivered_between(start: datetime, end: datetime):
@@ -85,9 +142,20 @@ async def sales_summary(
         )
     ).scalar_one()
 
+    returned = await returns_summary(session, start, end, agent_id)
+    gross = round_money(Decimal(amount or 0))
+    gross_units = int(units or 0)
+
     return {
-        "amount_usd": round_money(Decimal(amount or 0)),
-        "units": int(units or 0),
+        # Sof ko'rsatkichlar — qaytarishlar ayirilgan (asosiy raqamlar shular)
+        "amount_usd": round_money(gross - returned["amount_usd"]),
+        "units": gross_units - returned["units"],
+        # Batafsil ko'rish uchun
+        "gross_amount_usd": gross,
+        "gross_units": gross_units,
+        "returned_usd": returned["amount_usd"],
+        "returned_units": returned["units"],
+        "returns_count": returned["count"],
         "orders": int(orders_count or 0),
         "doctors": int(doctors_count or 0),
         "collected_usd": round_money(Decimal(collected or 0)),
@@ -139,18 +207,27 @@ async def top_products(
         )
     ).all()
 
-    return [
-        {
-            "product_id": r.id,
-            "sku": r.sku,
-            "name": r.name,
-            "size": _size_label(r.diameter_mm, r.length_mm),
-            "implant_type": r.implant_type,
-            "qty": int(r.qty or 0),
-            "amount_usd": round_money(Decimal(r.amount or 0)),
-        }
-        for r in rows
-    ]
+    returned = await returned_by_product(session, start, end)
+    result = []
+    for r in rows:
+        back_qty, back_amount = returned.get(int(r.id), (0, Decimal("0")))
+        result.append(
+            {
+                "product_id": r.id,
+                "sku": r.sku,
+                "name": r.name,
+                "size": _size_label(r.diameter_mm, r.length_mm),
+                "implant_type": r.implant_type,
+                "qty": max(0, int(r.qty or 0) - back_qty),
+                "amount_usd": round_money(
+                    max(Decimal("0"), Decimal(r.amount or 0) - back_amount)
+                ),
+                "returned_qty": back_qty,
+            }
+        )
+    # Qaytarishdan keyin tartib o'zgarishi mumkin
+    result.sort(key=lambda row: row["qty"], reverse=not ascending)
+    return result
 
 
 def _size_label(diameter, length) -> str:
@@ -197,16 +274,40 @@ async def size_demand(
 
     rows = (await session.execute(stmt)).all()
 
-    return [
-        {
-            "diameter_mm": float(r.diameter_mm),
-            "length_mm": float(r.length_mm),
-            "size": _size_label(r.diameter_mm, r.length_mm),
-            "qty": int(r.qty or 0),
-            "amount_usd": round_money(Decimal(r.amount or 0)),
-        }
-        for r in rows
-    ]
+    # Qaytarilgan donalarni razmer kesimida ayiramiz
+    returned = await returned_by_product(session, start, end)
+    sizes: dict[tuple, int] = {}
+    if returned:
+        product_rows = (
+            await session.execute(
+                select(Product.id, Product.diameter_mm, Product.length_mm).where(
+                    Product.id.in_(list(returned))
+                )
+            )
+        ).all()
+        for pid, diameter, length in product_rows:
+            if diameter is None or length is None:
+                continue
+            key = (float(diameter), float(length))
+            sizes[key] = sizes.get(key, 0) + returned[int(pid)][0]
+
+    result = []
+    for r in rows:
+        key = (float(r.diameter_mm), float(r.length_mm))
+        qty = max(0, int(r.qty or 0) - sizes.get(key, 0))
+        if qty == 0:
+            continue
+        result.append(
+            {
+                "diameter_mm": float(r.diameter_mm),
+                "length_mm": float(r.length_mm),
+                "size": _size_label(r.diameter_mm, r.length_mm),
+                "qty": qty,
+                "amount_usd": round_money(Decimal(r.amount or 0)),
+            }
+        )
+    result.sort(key=lambda row: row["qty"], reverse=True)
+    return result
 
 
 async def sales_by_type(

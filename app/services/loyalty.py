@@ -12,7 +12,16 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Doctor, DoctorCategory, Order, OrderItem, OrderStatus, utcnow
+from app.models import (
+    Doctor,
+    DoctorCategory,
+    Order,
+    OrderItem,
+    OrderStatus,
+    Return,
+    ReturnItem,
+    utcnow,
+)
 from app.services.fx import round_money, today_local
 from app.services.settings_service import get_setting
 
@@ -146,6 +155,38 @@ async def collect_metrics(session: AsyncSession, on_date: date) -> dict[int, Doc
     ).all()
     for doctor_id, qty in units:
         metrics.setdefault(doctor_id, DoctorMetrics()).units_12m = int(qty or 0)
+
+    # Qaytarishlar 12 oylik xariddan ayiriladi — toifa adolatli bo'lishi uchun
+    returned_rows = (
+        await session.execute(
+            select(
+                Return.doctor_id,
+                func.coalesce(func.sum(Return.total_usd), 0),
+            )
+            .where(Return.created_at >= since)
+            .group_by(Return.doctor_id)
+        )
+    ).all()
+    for doctor_id, amount in returned_rows:
+        m = metrics.setdefault(doctor_id, DoctorMetrics())
+        back = round_money(Decimal(amount or 0))
+        m.purchased_12m_usd = round_money(max(ZERO, m.purchased_12m_usd - back))
+        m.total_purchased_usd = round_money(max(ZERO, m.total_purchased_usd - back))
+
+    returned_units = (
+        await session.execute(
+            select(
+                Return.doctor_id,
+                func.coalesce(func.sum(ReturnItem.qty), 0),
+            )
+            .join(ReturnItem, ReturnItem.return_id == Return.id)
+            .where(Return.created_at >= since)
+            .group_by(Return.doctor_id)
+        )
+    ).all()
+    for doctor_id, qty in returned_units:
+        m = metrics.setdefault(doctor_id, DoctorMetrics())
+        m.units_12m = max(0, m.units_12m - int(qty or 0))
 
     # To'lov intizomi: yopilgan buyurtmalar bo'yicha o'rtacha kechikish + hozirgi kechikish
     delay_rows = (

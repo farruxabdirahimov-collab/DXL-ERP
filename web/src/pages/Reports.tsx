@@ -132,6 +132,34 @@ export default function Reports() {
                 />
               </div>
 
+              {Number(sales.data.summary.returns_count) > 0 ? (
+                <Section title="Qaytarish hisobga olindi">
+                  <Card className="p-0">
+                    <Row
+                      title="Jami sotildi"
+                      subtitle={`${num(sales.data.summary.gross_units)} dona`}
+                      right={usd(sales.data.summary.gross_amount_usd)}
+                    />
+                    <Row
+                      title="Qaytarildi"
+                      subtitle={`${num(sales.data.summary.returned_units)} dona · ${num(
+                        sales.data.summary.returns_count,
+                      )} ta hujjat`}
+                      right={`− ${usd(sales.data.summary.returned_usd)}`}
+                    />
+                    <Row
+                      title="Sof sotuv"
+                      subtitle={`${num(sales.data.summary.units)} dona`}
+                      right={usd(sales.data.summary.amount_usd)}
+                    />
+                  </Card>
+                  <p className="mt-2 px-1 text-xs text-slate-500">
+                    Yuqoridagi barcha raqamlar — sof sotuv. Qaytarilgan tovar
+                    hech qaysi hisobotda sotilgan bo‘lib qolmaydi.
+                  </p>
+                </Section>
+              ) : null}
+
               <Section title="Kategoriya bo‘yicha">
                 <Card className="p-0">
                   {(sales.data.by_category ?? []).map((row: any) => (

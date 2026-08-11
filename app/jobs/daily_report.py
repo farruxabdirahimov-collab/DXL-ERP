@@ -54,6 +54,20 @@ async def build_management_report(session: AsyncSession, day: date) -> str:
         f"  Dona: {number(today['units'])} | Buyurtma: {number(today['orders'])} | "
         f"Vrach: {number(today['doctors'])}",
         f"  Yig'ilgan pul: {money_usd(today['collected_usd'])}",
+    ]
+
+    # Qaytarish bo'lgan kunda raqam qayerdan kelganini ochiq ko'rsatamiz —
+    # aks holda "sotuv kam ko'rinyapti" degan savol tug'iladi.
+    if today["returns_count"]:
+        lines += [
+            f"  ↩️ Qaytarildi: {money_usd(today['returned_usd'])} "
+            f"({number(today['returned_units'])} dona, "
+            f"{number(today['returns_count'])} ta hujjat)",
+            f"  <i>Sotuv summasi — qaytarish ayirilgan sof raqam "
+            f"(jami {money_usd(today['gross_amount_usd'])})</i>",
+        ]
+
+    lines += [
         "",
         "<b>📅 Oy boshidan</b>",
         f"  Sotuv: {money_usd(month['amount_usd'])} | {number(month['units'])} dona",
@@ -129,6 +143,15 @@ async def build_agent_report(session: AsyncSession, agent: User, day: date) -> s
         "<b>Bugun</b>",
         f"  Sotuv: {money_usd(today['amount_usd'])} | {number(today['units'])} dona",
         f"  Yig'ilgan pul: {money_usd(today['collected_usd'])}",
+    ]
+
+    if today["returns_count"]:
+        lines.append(
+            f"  ↩️ Qaytarildi: {money_usd(today['returned_usd'])} "
+            f"({number(today['returned_units'])} dona) — reja hisobidan ayirildi"
+        )
+
+    lines += [
         "",
         f"<b>Oylik reja ({progress.days_passed}/{progress.days_in_month} kun)</b>",
     ]

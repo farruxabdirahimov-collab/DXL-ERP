@@ -184,6 +184,10 @@ class Return(Base, TimestampMixin):
     warehouse_id: Mapped[int] = mapped_column(
         ForeignKey("warehouses.id", ondelete="RESTRICT"), nullable=False
     )
+    #: Qaysi agent hisobidan ayiriladi (sotuv va reja hisobotlari uchun)
+    agent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
     total_usd: Mapped[Decimal] = mapped_column(
         Numeric(14, 2), default=Decimal("0"), nullable=False
     )
