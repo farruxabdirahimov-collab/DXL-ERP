@@ -301,6 +301,12 @@ export const useDebtAging = () =>
 export const useMyDebt = () =>
   useQuery({ queryKey: ['my-debt'], queryFn: () => api.get<any>('/finance/my-debt') })
 
+export const useReturns = () =>
+  useQuery({
+    queryKey: ['returns'],
+    queryFn: () => api.get<any[]>('/finance/returns'),
+  })
+
 export const useCreateReturn = () => {
   const qc = useQueryClient()
   return useMutation({
@@ -309,6 +315,8 @@ export const useCreateReturn = () => {
       qc.invalidateQueries({ queryKey: ['debts'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
       qc.invalidateQueries({ queryKey: ['orders'] })
+      qc.invalidateQueries({ queryKey: ['returns'] })
+      qc.invalidateQueries({ queryKey: ['reports'] })
     },
   })
 }

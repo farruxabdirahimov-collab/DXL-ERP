@@ -255,6 +255,39 @@ async def test_sababsiz_qaytarish_yozilmaydi(session, base_data):
         )
 
 
+async def test_royxatda_agent_faqat_ozinikini_koradi(session, base_data):
+    """«Qaytarishlar» bo'limi: agentga o'zining, omborchiga hammasi."""
+    from app.api.finance import list_returns
+    from app.models import User
+
+    order = await _sell(session, base_data, qty=4)
+    await inventory_ops.create_return(
+        session,
+        doctor=base_data["doctor"],
+        warehouse_id=base_data["warehouse"].id,
+        lines=[(base_data["implant"].id, 1)],
+        actor=base_data["agent"],
+        order_id=order.id,
+        reason="Qadoq shikastlangan",
+    )
+
+    rows = await list_returns(50, 0, session, base_data["agent"])
+    assert len(rows) == 1
+    assert rows[0]["doctor_name"] == base_data["doctor"].full_name
+    assert rows[0]["order_number"] == order.number
+    assert rows[0]["units"] == 1
+    assert rows[0]["reason"] == "Qadoq shikastlangan"
+
+    # Boshqa agent buni ko'rmaydi
+    ozga = User(full_name="Boshqa agent", role=Role.AGENT, telegram_id=880777)
+    session.add(ozga)
+    await session.flush()
+    assert await list_returns(50, 0, session, ozga) == []
+
+    # Omborchi hammasini ko'radi
+    assert len(await list_returns(50, 0, session, base_data["keeper"])) == 1
+
+
 async def test_kunlik_hisobotda_qaytarish_ochiq_korsatiladi(session, base_data):
     """21:00 xabarida raqam nega kamayganini o'qib bilish mumkin bo'lsin."""
     from app.jobs.daily_report import build_agent_report, build_management_report

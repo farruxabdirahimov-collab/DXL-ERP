@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user, require_perm
 from app.db import get_session
-from app.models import Doctor, Order, Payment, Role, User
+from app.models import Doctor, Order, Payment, Return, Role, User
 from app.permissions import (
     FX_EDIT,
     doctor_scope,
@@ -214,6 +214,43 @@ async def my_debt(
 
 
 # ---------------------------------------------------------------- qaytarish
+@router.get("/returns")
+async def list_returns(
+    limit: int = Query(default=50, le=200),
+    offset: int = 0,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(RETURNS_CREATE)),
+):
+    """Rasmiylashtirilgan qaytarishlar tarixi — yangisidan eskisiga."""
+    stmt = (
+        select(Return, Doctor.full_name, Order.number)
+        .join(Doctor, Doctor.id == Return.doctor_id)
+        .outerjoin(Order, Order.id == Return.order_id)
+        .order_by(Return.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    # Agent faqat o'z hisobidan ayirilgan qaytarishlarni ko'radi
+    if doctor_scope(user) is not None:
+        stmt = stmt.where(Return.agent_id == user.id)
+
+    rows = (await session.execute(stmt)).all()
+    return [
+        {
+            "id": doc.id,
+            "number": doc.number,
+            "doctor_name": doctor_name,
+            "order_id": doc.order_id,
+            "order_number": order_number,
+            "total_usd": doc.total_usd,
+            "units": sum(item.qty for item in doc.items),
+            "reason": doc.reason,
+            "created_at": doc.created_at.isoformat(),
+        }
+        for doc, doctor_name, order_number in rows
+    ]
+
+
 @router.post("/returns", response_model=OkOut, status_code=201)
 async def create_return(
     payload: ReturnIn,

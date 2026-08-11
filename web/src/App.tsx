@@ -15,6 +15,7 @@ import Orders from './pages/Orders'
 import OrderPage from './pages/OrderPage'
 import NewOrder from './pages/NewOrder'
 import Payments from './pages/Payments'
+import Returns from './pages/Returns'
 import Debts from './pages/Debts'
 import MyDebt from './pages/MyDebt'
 import Reports from './pages/Reports'
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/new-order" element={<NewOrder />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/debts" element={<Debts />} />
+          <Route path="/returns" element={<Returns />} />
           <Route path="/my-debt" element={<MyDebt />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/plan" element={<Plan />} />

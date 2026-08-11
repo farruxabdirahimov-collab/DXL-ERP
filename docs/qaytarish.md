@@ -22,9 +22,20 @@ hisobotlar bir vaqtda to'g'rilanadi.
 
 ---
 
+## Qayerda turadi
+
+Ikki joyda:
+
+- **Yana → ↩️ Qaytarishlar** — barcha qaytarishlar tarixi va qisqa yo'riqnoma
+- **Buyurtma ichida** — qaytarish shu yerdan yoziladi (pastdagi tugma)
+
+Tugma buyurtma ichida turishining sababi: qaysi buyurtmadan qaytayotgani
+ma'lum bo'lsa, tizim narxni ham, agentni ham o'zi to'g'ri oladi.
+
 ## Qadamlar (telefonda)
 
-1. **Buyurtmalar** → qaytarilayotgan tovar ketgan buyurtmani oching.
+1. **Buyurtmalar** → yuqoridagi bo'limlardan **«Yetkazilgan»** ni tanlang
+   (bo'limlar qatorini chapga suring) → kerakli buyurtmani oching.
 2. Buyurtma holati **«Yetkazildi»** bo'lsa, pastda
    **«↩️ Tovarni qaytarish (vozvrat)»** tugmasi chiqadi.
 3. Ochilgan oynada buyurtmadagi mahsulotlar ro'yxati ko'rinadi —
