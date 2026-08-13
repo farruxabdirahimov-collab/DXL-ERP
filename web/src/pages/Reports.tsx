@@ -202,13 +202,13 @@ export default function Reports() {
       {tab === 'sizes' ? (
         <>
           {sizes.isLoading ? <Loading /> : null}
-          {sizes.data && sizes.data.length > 0 ? (
+          {sizes.data && sizes.data.sold.length > 0 ? (
             <>
               <Card className="mb-3 pb-1 pl-0 pr-1">
                 <div style={{ height: 220 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={sizes.data.slice(0, 12).map((s) => ({
+                      data={sizes.data.sold.slice(0, 12).map((s) => ({
                         size: s.size,
                         dona: s.qty,
                       }))}
@@ -240,7 +240,7 @@ export default function Reports() {
                         formatter={(value: number) => [`${value} dona`, 'Sotilgan']}
                       />
                       <Bar dataKey="dona" radius={[6, 6, 0, 0]}>
-                        {sizes.data.slice(0, 12).map((_, index) => (
+                        {sizes.data.sold.slice(0, 12).map((_, index) => (
                           <Cell
                             key={index}
                             fill={index < 3 ? 'var(--accent)' : 'var(--muted)'}
@@ -251,17 +251,44 @@ export default function Reports() {
                   </ResponsiveContainer>
                 </div>
               </Card>
-              <Card className="p-0">
-                {sizes.data.map((row, index) => (
-                  <Row
-                    key={row.size}
-                    title={`${index + 1}. ${row.size} mm`}
-                    subtitle={`Ø${row.diameter_mm} × ${row.length_mm} mm`}
-                    right={`${num(row.qty)} dona`}
-                    rightSub={usd(row.amount_usd)}
-                  />
-                ))}
-              </Card>
+              <Section title="Sof talab (qaytarilgani ayirilgan)">
+                <Card className="p-0">
+                  {sizes.data.sold.map((row, index) => (
+                    <Row
+                      key={row.size}
+                      title={`${index + 1}. ${row.size} mm`}
+                      subtitle={
+                        row.returned_qty
+                          ? `Ø${row.diameter_mm} × ${row.length_mm} mm · sotilgan ${num(
+                              row.gross_qty ?? 0,
+                            )}, qaytgan ${num(row.returned_qty)}`
+                          : `Ø${row.diameter_mm} × ${row.length_mm} mm`
+                      }
+                      right={`${num(row.qty)} dona`}
+                      rightSub={usd(row.amount_usd)}
+                    />
+                  ))}
+                </Card>
+              </Section>
+
+              {sizes.data.returned.length > 0 ? (
+                <Section title="↩️ Qaytarib berilgan razmerlar">
+                  <Card className="p-0">
+                    {sizes.data.returned.map((row) => (
+                      <Row
+                        key={`ret-${row.size}-${row.implant_type ?? ''}`}
+                        title={`${row.size} mm`}
+                        subtitle={row.implant_type ?? undefined}
+                        right={`${num(row.qty)} dona`}
+                        rightSub={usd(row.amount_usd)}
+                      />
+                    ))}
+                  </Card>
+                  <p className="mt-2 px-1 text-xs text-slate-500">
+                    Ko‘p qaytarilayotgan o‘lchamni ortiqcha zaxira qilmaslik kerak.
+                  </p>
+                </Section>
+              ) : null}
             </>
           ) : (
             <Empty text="Bu davrda sotuv bo‘lmagan" />

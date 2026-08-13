@@ -6,6 +6,7 @@ import {
   useCreatePayment,
   useDoctor,
   useDoctorDebt,
+  useDoctorHistory,
   useFxRate,
   useOrders,
 } from '../api/hooks'
@@ -35,6 +36,7 @@ export default function DoctorPage() {
 
   const { data: doctor, isLoading, error } = useDoctor(doctorId)
   const { data: debt } = useDoctorDebt(doctorId)
+  const { data: history } = useDoctorHistory(doctorId)
   const { data: orders } = useOrders({ doctor_id: doctorId, limit: 15 })
   const { data: fx } = useFxRate()
 
@@ -224,6 +226,89 @@ export default function DoctorPage() {
             ))}
           </Card>
         </Section>
+      ) : null}
+
+      {history && history.summary.orders_count > 0 ? (
+        <>
+          <Section title="Mini hisobot">
+            <div className="grid grid-cols-2 gap-2">
+              <Stat
+                label="Xarid qildi (sof)"
+                value={usd(history.summary.net_usd)}
+                tone="accent"
+              />
+              <Stat label="To‘lov qildi" value={usd(history.summary.paid_usd)} tone="ok" />
+              <Stat
+                label="Olgan implant"
+                value={`${num(history.summary.net_units)} dona`}
+              />
+              <Stat
+                label="Qaytargan"
+                value={`${num(history.summary.returned_units)} dona`}
+                tone={history.summary.returned_units > 0 ? 'warn' : undefined}
+              />
+            </div>
+            {history.summary.returned_units > 0 ? (
+              <p className="mt-2 px-1 text-xs text-slate-500">
+                Jami {usd(history.summary.bought_usd)} olgan, {usd(history.summary.returned_usd)}{' '}
+                qaytargan — yuqoridagi «sof» raqam shu ayirma.
+              </p>
+            ) : null}
+          </Section>
+
+          <Section title="Qaysi razmerlarni oladi">
+            <Card className="p-0">
+              {history.sizes.map((row: any) => (
+                <Row
+                  key={`${row.size}-${row.implant_type ?? ''}`}
+                  title={row.size}
+                  subtitle={
+                    row.returned_qty
+                      ? `${row.implant_type ?? 'Implant'} · olgan ${num(
+                          row.bought_qty,
+                        )}, qaytargan ${num(row.returned_qty)}`
+                      : (row.implant_type ?? 'Implant')
+                  }
+                  right={`${num(row.net_qty)} dona`}
+                  rightSub={usd(row.amount_usd)}
+                />
+              ))}
+            </Card>
+          </Section>
+
+          <Section title="Tranzaksiyalar tarixi">
+            <Card className="p-0">
+              {history.timeline.map((e: any, index: number) => (
+                <Row
+                  key={`${e.kind}-${e.number}-${index}`}
+                  title={
+                    <span>
+                      <span className="mr-1">
+                        {e.kind === 'order' ? '🛒' : e.kind === 'return' ? '↩️' : '💰'}
+                      </span>
+                      {e.number}
+                    </span>
+                  }
+                  subtitle={
+                    [
+                      shortDate(e.at),
+                      e.lines?.length
+                        ? e.lines
+                            .map((l: any) => `${l.size} × ${l.qty}`)
+                            .join(', ')
+                        : null,
+                      e.note,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  }
+                  right={`${e.kind === 'order' ? '' : '− '}${usd(e.amount_usd)}`}
+                  onClick={e.order_id ? () => navigate(`/orders/${e.order_id}`) : undefined}
+                />
+              ))}
+            </Card>
+          </Section>
+        </>
       ) : null}
 
       <Section title="Buyurtmalar tarixi">

@@ -99,6 +99,47 @@ async def returned_by_product(
     return {int(pid): (int(qty or 0), Decimal(amount or 0)) for pid, qty, amount in rows}
 
 
+async def returned_sizes(
+    session: AsyncSession, start: datetime, end: datetime, limit: int = 40
+) -> list[dict]:
+    """Qaysi razmerdagi implantlar qaytarilgan — ko'pidan kamiga.
+
+    Omborchi uchun muhim: qaysi o'lcham vrachlarga mos kelmayapti.
+    """
+    qty_sum = func.coalesce(func.sum(ReturnItem.qty), 0).label("qty")
+    amount_sum = func.coalesce(func.sum(ReturnItem.line_total_usd), 0).label("amount")
+
+    rows = (
+        await session.execute(
+            select(
+                Product.diameter_mm,
+                Product.length_mm,
+                Product.implant_type,
+                qty_sum,
+                amount_sum,
+            )
+            .join(ReturnItem, ReturnItem.product_id == Product.id)
+            .join(Return, Return.id == ReturnItem.return_id)
+            .where(_returned_between(start, end))
+            .group_by(Product.diameter_mm, Product.length_mm, Product.implant_type)
+            .order_by(qty_sum.desc())
+            .limit(limit)
+        )
+    ).all()
+
+    return [
+        {
+            "diameter_mm": float(r.diameter_mm) if r.diameter_mm is not None else None,
+            "length_mm": float(r.length_mm) if r.length_mm is not None else None,
+            "size": _size_label(r.diameter_mm, r.length_mm),
+            "implant_type": r.implant_type,
+            "qty": int(r.qty or 0),
+            "amount_usd": round_money(Decimal(r.amount or 0)),
+        }
+        for r in rows
+    ]
+
+
 def _delivered_between(start: datetime, end: datetime):
     return and_(
         Order.status == OrderStatus.DELIVERED,
@@ -294,7 +335,9 @@ async def size_demand(
     result = []
     for r in rows:
         key = (float(r.diameter_mm), float(r.length_mm))
-        qty = max(0, int(r.qty or 0) - sizes.get(key, 0))
+        back_qty = sizes.get(key, 0)
+        gross_qty = int(r.qty or 0)
+        qty = max(0, gross_qty - back_qty)
         if qty == 0:
             continue
         result.append(
@@ -303,6 +346,8 @@ async def size_demand(
                 "length_mm": float(r.length_mm),
                 "size": _size_label(r.diameter_mm, r.length_mm),
                 "qty": qty,
+                "gross_qty": gross_qty,
+                "returned_qty": back_qty,
                 "amount_usd": round_money(Decimal(r.amount or 0)),
             }
         )

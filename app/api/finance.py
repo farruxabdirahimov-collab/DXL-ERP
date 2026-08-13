@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user, require_perm
 from app.db import get_session
-from app.models import Doctor, Order, Payment, Return, Role, User
+from app.models import Doctor, Order, Payment, Product, Return, Role, User
 from app.permissions import (
     FX_EDIT,
     doctor_scope,
@@ -235,6 +235,32 @@ async def list_returns(
         stmt = stmt.where(Return.agent_id == user.id)
 
     rows = (await session.execute(stmt)).all()
+
+    # Qaysi razmer qaytganini ko'rsatish uchun mahsulot nomlarini olamiz
+    product_ids = {item.product_id for doc, _, _ in rows for item in doc.items}
+    products: dict[int, Product] = {}
+    if product_ids:
+        found = (
+            await session.execute(select(Product).where(Product.id.in_(product_ids)))
+        ).scalars().all()
+        products = {p.id: p for p in found}
+
+    def _items(doc: Return) -> list[dict]:
+        result = []
+        for item in doc.items:
+            product = products.get(item.product_id)
+            result.append(
+                {
+                    "product_id": item.product_id,
+                    "name": product.name if product else f"#{item.product_id}",
+                    "size": product.size_label if product else None,
+                    "implant_type": product.implant_type if product else None,
+                    "qty": item.qty,
+                    "line_total_usd": item.line_total_usd,
+                }
+            )
+        return result
+
     return [
         {
             "id": doc.id,
@@ -246,6 +272,7 @@ async def list_returns(
             "units": sum(item.qty for item in doc.items),
             "reason": doc.reason,
             "created_at": doc.created_at.isoformat(),
+            "items": _items(doc),
         }
         for doc, doctor_name, order_number in rows
     ]

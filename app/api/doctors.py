@@ -37,7 +37,7 @@ from app.schemas import (
     OkOut,
     RejectRequestIn,
 )
-from app.services import debt as debt_service
+from app.services import debt as debt_service, doctor_history as doctor_history_service
 from app.services.fx import today_local
 from app.services.loyalty import upcoming_birthdays_filter
 from app.services.settings_service import get_setting
@@ -337,6 +337,22 @@ async def doctor_debt(
             for o in orders
         ],
     }
+
+
+@router.get("/{doctor_id}/history")
+async def doctor_history(
+    doctor_id: int,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(DOCTORS_VIEW)),
+):
+    """Vrachning mini hisoboti: xaridlar, razmerlar, qaytarishlar va to'lovlar."""
+    doctor = await session.get(Doctor, doctor_id)
+    if doctor is None:
+        raise HTTPException(404, "Vrach topilmadi")
+    if doctor_scope(user) is not None and doctor.agent_id != user.id:
+        raise HTTPException(403, "Bu vrach sizga biriktirilmagan")
+
+    return await doctor_history_service.build(session, doctor_id)
 
 
 @router.post("", response_model=DoctorOut, status_code=201)

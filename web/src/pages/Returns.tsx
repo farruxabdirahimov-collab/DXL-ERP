@@ -36,10 +36,9 @@ export default function Returns() {
       </Card>
 
       <Section title="Tarix">
-        <Card className="p-0">
-          {rows.map((r) => (
+        {rows.map((r) => (
+          <Card key={r.id} className="mb-2 p-0">
             <Row
-              key={r.id}
               title={`${r.doctor_name} · ${r.number}`}
               subtitle={
                 [
@@ -54,11 +53,28 @@ export default function Returns() {
               rightSub={`${num(r.units)} dona`}
               onClick={r.order_id ? () => navigate(`/orders/${r.order_id}`) : undefined}
             />
-          ))}
-          {!isLoading && !rows.length ? (
-            <Empty text="Hali qaytarish bo‘lmagan" />
-          ) : null}
-        </Card>
+            {/* Qaysi razmer qaytgani — omborchi uchun eng kerakli ma'lumot */}
+            <div className="border-t border-[var(--border)] px-3 py-2">
+              {(r.items ?? []).map((item: any) => (
+                <div
+                  key={item.product_id}
+                  className="flex items-baseline justify-between gap-2 py-0.5 text-[13px]"
+                >
+                  <span className="min-w-0">
+                    <b>{item.size ?? '—'}</b>
+                    <span className="text-[var(--muted)]">
+                      {item.implant_type ? ` · ${item.implant_type}` : ''}
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-semibold">{num(item.qty)} dona</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+        {!isLoading && !rows.length ? (
+          <Empty text="Hali qaytarish bo‘lmagan" />
+        ) : null}
       </Section>
     </Screen>
   )

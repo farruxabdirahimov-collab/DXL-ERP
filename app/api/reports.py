@@ -104,9 +104,16 @@ async def size_demand(
     session: AsyncSession = Depends(get_session),
     _: User = Depends(require_perm(REPORTS_VIEW)),
 ):
-    """Eng talabgir implant razmerlari (diametr x uzunlik)."""
+    """Eng talabgir implant razmerlari (diametr x uzunlik).
+
+    `sold` — sof talab (qaytarilgani ayirilgan), `returned` — qaysi razmerlar
+    qaytarib berilgani. Ikkalasi yonma-yon ko'rinsin uchun birga qaytariladi.
+    """
     start, end = _range(date_from, date_to)
-    return await rp.size_demand(session, start, end)
+    return {
+        "sold": await rp.size_demand(session, start, end),
+        "returned": await rp.returned_sizes(session, start, end),
+    }
 
 
 @router.get("/products/types")

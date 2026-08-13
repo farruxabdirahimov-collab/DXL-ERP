@@ -260,8 +260,17 @@ export interface SizeDemand {
   diameter_mm: number
   length_mm: number
   size: string
+  /** Sof dona — qaytarilgani ayirilgan */
   qty: number
+  gross_qty?: number
+  returned_qty?: number
+  implant_type?: string | null
   amount_usd: string
+}
+
+export interface SizeReport {
+  sold: SizeDemand[]
+  returned: SizeDemand[]
 }
 
 export interface UserRow {

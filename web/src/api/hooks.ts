@@ -18,7 +18,7 @@ import type {
   PlanProgress,
   Product,
   SettingRow,
-  SizeDemand,
+  SizeReport,
   StockRow,
   Task,
   TopProduct,
@@ -147,6 +147,13 @@ export const useDoctorDebt = (id?: number) =>
   useQuery({
     queryKey: ['doctor-debt', id],
     queryFn: () => api.get<any>(`/doctors/${id}/debt`),
+    enabled: Boolean(id),
+  })
+
+export const useDoctorHistory = (id?: number) =>
+  useQuery({
+    queryKey: ['doctor-history', id],
+    queryFn: () => api.get<any>(`/doctors/${id}/history`),
     enabled: Boolean(id),
   })
 
@@ -348,7 +355,7 @@ export const useTopProducts = (params: Record<string, unknown>, ascending = fals
 export const useSizeDemand = (params: Record<string, unknown>) =>
   useQuery({
     queryKey: ['size-demand', params],
-    queryFn: () => api.get<SizeDemand[]>('/reports/products/sizes', params),
+    queryFn: () => api.get<SizeReport>('/reports/products/sizes', params),
   })
 
 export const useSalesByType = (params: Record<string, unknown>) =>
