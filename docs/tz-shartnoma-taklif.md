@@ -85,7 +85,7 @@ asosiy harakat shu:
 │  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░  84%         │
 │                                    │
 │  Sovg'ani olish uchun: $400        │
-│  🎁 Nakonechnik ($100)             │
+│  🎁 Nakonechnik                    │
 └────────────────────────────────────┘
 ```
 
@@ -111,11 +111,11 @@ tepada. Agent ertalab shuni ochib, kimga qo'ng'iroq qilishni biladi.
 
 | Qachon | Kimga | Matn mazmuni |
 |---|---|---|
-| 7 kun qolganda | vrach + agent | «$400 qoldi, 7 kun ichida yopsangiz $100 lik nakonechnik sovg'a» |
+| 7 kun qolganda | vrach + agent | «$400 qoldi, 7 kun ichida yopsangiz nakonechnik sovg'a» |
 | 3 kun qolganda | vrach + agent | shoshilinch ohang |
 | 1 kun qolganda | vrach + agent + direktor | «Ertaga muddat tugaydi» |
 | To'liq to'langanda | vrach + agent | «🎁 Tabriklaymiz! Sovg'angiz tayyor» |
-| Muddat o'tganda | agent + direktor | «Sovg'a berilmadi, qarz $400 qoldi» |
+| Muddat o'tganda | agent + direktor | «Sovg'a berilmadi, qarz $400 qoldi» (summa faqat rahbariyatga) |
 | Har kuni 21:00 | direktor | 3 kundan kam qolgan shartnomalar ro'yxati |
 
 Vaqt: ertalab 09:00 (eslatmalar jobi allaqachon shu vaqtda ishlaydi).
@@ -210,26 +210,67 @@ Undan kam bo'lsa: qarz kamayadi, lekin sovg'a berilmaydi.
 
 ---
 
-## 7. Savollar — javob kerak
+## 7. Tasdiqlangan qarorlar
 
-### Blokirovka qiluvchi (bularsiz boshlay olmayman)
+Bu to'rttasi kelishildi — shu bo'yicha quriladi.
 
-1. **Paket narxi qat'iymi?** Jadvalda implant $50 dan. Katalogda esa har
-   razmerning narxi har xil ($95–110 atrofida, bu men yaratgan namunaviy
-   narxlar). Ya'ni:
-   - **A:** paket qat'iy — qaysi razmer olinishidan qat'i nazar 20 ta = $1000
-   - **B:** dona narxi $50, katalog narxlari shunga moslanadi
-   - **C:** katalog narxlari haqiqiy, tarif esa chegirma foizi beradi
+### ✅ 1. Paket qat'iy narxda
 
-2. **Teskari sanoq qachondan?** Shartnoma imzolangandanmi yoki tovar
-   yetkazilgandanmi? *(tavsiyam — yetkazilgandan)*
+20 ta implant = $1000, **qaysi razmer tanlanishidan qat'i nazar**. Vrach
+o'zi tanlaydi, narx o'zgarmaydi. Vrach uchun eng tushunarli variant.
 
-3. **Sovg'adagi $60 — sotuv narximi yoki tannarxmi?** Agar nakonechnikning
-   sotuv narxi $60, tannarxi $40 bo'lsa, haqiqiy sof foyda $280 emas,
-   **$300**. Jadvalingiz bu holda ehtiyotkor hisoblangan bo'ladi.
+**⚠️ Buning bitta oqibati bor — e'tiboringizga.**
 
-4. **Qaytarish shartnoma summasini kamaytiradimi?** Va yuqoridagi
-   80% li minimal chegara qabul qilinadimi?
+Katalogda razmerlar narxi har xil, **tannarxi ham har xil bo'lishi mumkin**
+(yo'g'onroq va uzunroq implant odatda qimmatroq). Paket narxi qat'iy
+bo'lgani uchun vrach tabiiy ravishda **eng qimmat razmerlarni tanlaydi** —
+bu uning foydasiga, sizning zararingizga.
+
+Misol: paketdagi 20 ta implantning hammasi Ø5.0×13 mm bo'lsa, tannarx
+$660 emas, masalan $760 bo'lib chiqishi mumkin — foyda $340 dan $240 ga
+tushadi.
+
+Uch yechim bor:
+- **A:** hech narsa qilmaymiz, lekin har shartnomaning **haqiqiy tannarxi**
+  hisoblanadi va foyda hisobotida ko'rinadi (Modul 3). Og'ish katta bo'lsa
+  keyin tuzatasiz. *— eng sodda yo'l*
+- **B:** paketga faqat **standart razmerlar** kiradi, premium razmerlar
+  uchun dona ustiga qo'shimcha $X
+- **C:** paketda razmer taqsimoti cheklanadi (masalan Ø5.0 dan ko'pi bilan 5 ta)
+
+*Hozircha A bo'yicha quriladi — tannarx har shartnomada haqiqiy raqam bilan
+yoziladi, shuning uchun keyin B yoki C ga o'tish oson.*
+
+### ✅ 2. Teskari sanoq shartnoma imzolangandan boshlanadi
+
+`signed_at` — aniq soat va daqiqagacha. Ya'ni 3-mart soat 14:30 da
+imzolangan Old-20 shartnomasi **18-mart soat 14:30 da** tugaydi.
+
+*Eslatma: tovarni imzolangan kuni yetkazishga harakat qiling — kechiksa
+vrach kunini yo'qotadi va norozilik chiqishi mumkin. Tizim yetkazish
+kechikkanini ko'rsatib turadi.*
+
+### ✅ 3. Sovg'adagi $60 — tannarx
+
+Ya'ni jadvalingizdagi $280 / $750 / $1550 — **aniq raqamlar**, ehtiyot
+zaxirasi yo'q. Foyda hisobotida sovg'a shu tannarx bilan yoziladi.
+
+**Vrach sovg'aning pul qiymatini ko'rmaydi.** Unga faqat nomi ko'rsatiladi:
+«🎁 Nakonechnik». Summa faqat direktor, buxgalter va ta'sischiga ko'rinadi.
+
+### ✅ 4. Qaytarish bo'lsa — sovg'a berilmaydi
+
+Sodda va qat'iy qoida:
+
+> Shartnoma bo'yicha tovar qaytarilsa, **sovg'a bekor bo'ladi**.
+> Qarz odatdagidek kamayadi, narx o'zgarmaydi.
+
+Maqsad — sovg'a sharti bilan pul oqimini tezlatish. Qaytarish esa aylanmani
+sekinlashtiradi, shuning uchun rag'bat ham yo'qoladi. Bu yo'l avval
+aytilgan suiiste'mol yo'lini ham butunlay yopadi.
+
+Vrach qaytargan zahoti kartochkada ko'rinadi: «Sovg'a bekor qilindi —
+tovar qaytarilgani uchun». Agent ham xabar oladi.
 
 ### Muhim, lekin keyin ham javob berish mumkin
 
