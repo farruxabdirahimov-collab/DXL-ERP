@@ -23,6 +23,7 @@ from app.permissions import (
 )
 from app.schemas import FxRateIn, OkOut, PaymentIn, PaymentOut, ReturnIn
 from app.services import (
+    contracts as contracts_service,
     debt as debt_service,
     fx as fx_service,
     inventory_ops,
@@ -141,9 +142,18 @@ async def create_payment(
     )
     await notifications.payment_received(session, payment)
 
+    # Shu to'lov taklif-shartnomani muddatida yopgan bo'lsa — tabrik.
+    # Bu eng kuchli lahza: vrach sovg'ani his qilib, keyingi paketni oladi.
+    sovgalar = await contracts_service.unnotified_gifts(session, doctor.id)
+    for contract in sovgalar:
+        await notifications.contract_gift_earned(session, contract)
+        contract.gift_notified = True
+
     message = f"To'lov qabul qilindi: {payment.amount_uzs:,.0f} so'm (${payment.amount_usd})"
     if advance > 0:
         message += f". Avans qoldi: ${advance}"
+    for contract in sovgalar:
+        message += f"\n🎁 {contract.number} yopildi — sovg'a: {contract.gift_name}"
     return OkOut(ok=True, message=message.replace(",", " "))
 
 

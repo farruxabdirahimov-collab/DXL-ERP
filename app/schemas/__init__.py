@@ -564,3 +564,25 @@ class BroadcastOut(ORMModel):
     sent_count: int
     failed_count: int
     author_name: str | None = None
+
+
+# ------------------------------------------------- taklif-shartnoma
+class TariffIn(BaseModel):
+    """Direktor tarif yaratadi. Sovg'a tannarxini vrach ko'rmaydi."""
+
+    name: str = Field(min_length=2, max_length=80)
+    package_qty: int = Field(ge=1)
+    package_price_usd: Decimal = Field(gt=0)
+    term_days: int = Field(ge=1, le=365)
+    gift_name: str | None = Field(default=None, max_length=120)
+    gift_cost_usd: Decimal = Field(default=Decimal("0"), ge=0)
+    gift_product_id: int | None = None
+    sort_order: int = 100
+    is_active: bool = True
+    note: str | None = None
+
+
+class ContractIn(BaseModel):
+    doctor_id: int
+    tariff_id: int
+    note: str | None = None

@@ -7,6 +7,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
+    Contract,
     Doctor,
     MoveKind,
     Order,
@@ -123,6 +124,18 @@ async def create_return(
     doctor.total_purchased_usd = round_money(
         max(Decimal("0"), Decimal(doctor.total_purchased_usd) - doc.total_usd)
     )
+
+    # Shartnoma bo'yicha tovar qaytarilsa — sovg'a bekor bo'ladi (kelishilgan
+    # qoida). Qarz odatdagidek kamayadi, paket narxi o'zgarmaydi.
+    from app.services import contracts as contracts_service
+
+    shartnoma = None
+    if order is not None and order.contract_id:
+        shartnoma = await session.get(Contract, order.contract_id)
+    if shartnoma is None:
+        shartnoma = await contracts_service.open_contract(session, doctor.id)
+    if shartnoma is not None:
+        await contracts_service.register_return(session, shartnoma, doc.total_usd)
 
     await session.flush()
     return doc

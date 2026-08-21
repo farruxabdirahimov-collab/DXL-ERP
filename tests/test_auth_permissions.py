@@ -142,6 +142,8 @@ def test_vrach_faqat_ozining_bolimlarini_koradi():
         "orders.create",
         "payments.view",
         "content.view",
+        # O'z shartnomasi va teskari sanog'ini ko'radi — boshqasinikini emas
+        "contracts.view",
     }
     # Vrach hech narsani o'zgartira olmaydi va boshqalarning ma'lumotini ko'rmaydi
     for forbidden in (

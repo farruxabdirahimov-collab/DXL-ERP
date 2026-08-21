@@ -6,6 +6,7 @@ from app.api import (
     admin,
     catalog,
     content,
+    contracts,
     doctors,
     finance,
     me,
@@ -21,6 +22,7 @@ api_router = APIRouter()
 api_router.include_router(me.router)
 api_router.include_router(catalog.router)
 api_router.include_router(content.router)
+api_router.include_router(contracts.router)
 api_router.include_router(stock.router)
 api_router.include_router(doctors.router)
 api_router.include_router(orders.router)

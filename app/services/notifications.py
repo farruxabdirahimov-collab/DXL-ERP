@@ -229,3 +229,92 @@ async def welcome_new_user(session: AsyncSession, user: User) -> None:
         kind="welcome",
         button=("DXL ERP ni ochish", "/"),
     )
+
+
+# ------------------------------------------------- taklif-shartnoma
+def _contract_lines(contract, *, for_doctor: bool) -> str:
+    """Umumiy matn. Vrach sovg'aning pul qiymatini ko'rmaydi — faqat nomini."""
+    from app.services import contracts as contracts_service
+
+    qoldi = money_usd(contract.remaining_usd)
+    sanoq = contracts_service.countdown(contract).label()
+    sovga = f"\n🎁 Sovg'a: {contract.gift_name}" if contract.gift_name else ""
+    kim = "" if for_doctor else f"\nShartnoma: {contract.number}"
+    return f"⏳ {sanoq}\nTo'lanmagan: {qoldi}{sovga}{kim}"
+
+
+async def contract_reminder(session: AsyncSession, contract, days_left: int) -> None:
+    """7/3/1 kunlik eslatma — vrachga, agentga, oxirgi kuni direktorga ham."""
+    shoshilinch = "❗️" if days_left <= 1 else "⏰"
+    doctor = await session.get(Doctor, contract.doctor_id)
+
+    if doctor is not None and doctor.user_id:
+        sarlavha = (
+            "Ertaga muddat tugaydi!" if days_left <= 1
+            else f"{days_left} kun qoldi"
+        )
+        await notify.send_to_user_id(
+            session,
+            doctor.user_id,
+            f"{shoshilinch} <b>{sarlavha}</b>\n"
+            f"{_contract_lines(contract, for_doctor=True)}\n\n"
+            "To'liq to'lasangiz sovg'a sizniki.",
+            kind="contract_due",
+        )
+
+    label = await _doctor_label(session, contract.doctor_id)
+    await notify.send_to_user_id(
+        session,
+        contract.agent_id,
+        f"{shoshilinch} <b>{label}</b> — {days_left} kun qoldi\n"
+        f"{_contract_lines(contract, for_doctor=False)}",
+        kind="contract_due_agent",
+    )
+
+    if days_left <= 1:
+        await notify.send_to_roles(
+            session,
+            [Role.DIRECTOR, Role.SUPERADMIN],
+            f"❗️ <b>Ertaga muddat tugaydi</b>\n{label}\n"
+            f"{_contract_lines(contract, for_doctor=False)}",
+            kind="contract_due_boss",
+        )
+
+
+async def contract_gift_earned(session: AsyncSession, contract) -> None:
+    """To'liq to'landi — tabrik. Bu eng kuchli lahzasi, qo'ldan chiqarmaymiz."""
+    doctor = await session.get(Doctor, contract.doctor_id)
+    sovga = contract.gift_name or "sovg'angiz"
+
+    if doctor is not None and doctor.user_id:
+        await notify.send_to_user_id(
+            session,
+            doctor.user_id,
+            f"🎁 <b>Tabriklaymiz!</b>\n"
+            f"{contract.number} shartnomasini muddatida to'liq yopdingiz.\n"
+            f"Sovg'angiz tayyor: <b>{sovga}</b>\n\n"
+            "Agentingiz bilan bog'laning yoki keyingi yetkazishda oling.",
+            kind="gift_earned",
+        )
+
+    label = await _doctor_label(session, contract.doctor_id)
+    await notify.send_to_user_id(
+        session,
+        contract.agent_id,
+        f"🎁 <b>{label}</b> shartnomani muddatida yopdi — sovg'a tayyorlang: {sovga}",
+        kind="gift_earned_agent",
+    )
+
+
+async def contract_expired(session: AsyncSession, contract) -> None:
+    """Muddat o'tdi — sovg'a yo'qoldi. Vrachga aytmaymiz, ichki xabar."""
+    label = await _doctor_label(session, contract.doctor_id)
+    text = (
+        f"⌛️ <b>Muddat o'tdi</b>\n{label} — {contract.number}\n"
+        f"To'lanmagan: {money_usd(contract.remaining_usd)}\n"
+        "Sovg'a berilmaydi, qarz odatdagi nazoratga o'tdi."
+    )
+    await notify.send_to_user_id(session, contract.agent_id, text, kind="contract_expired")
+    await notify.send_to_roles(
+        session, [Role.DIRECTOR, Role.SUPERADMIN], text, kind="contract_expired_boss"
+    )

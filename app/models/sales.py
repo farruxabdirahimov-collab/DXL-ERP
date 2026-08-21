@@ -73,6 +73,10 @@ class Order(Base, TimestampMixin):
     agent_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
+    #: Taklif-shartnoma hisobidan ketgan bo'lsa — paket narxi shundan olinadi
+    contract_id: Mapped[int | None] = mapped_column(
+        ForeignKey("contracts.id", ondelete="SET NULL"), index=True
+    )
     warehouse_id: Mapped[int] = mapped_column(
         ForeignKey("warehouses.id", ondelete="RESTRICT"), nullable=False, index=True
     )

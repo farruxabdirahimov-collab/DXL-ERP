@@ -19,7 +19,7 @@ from app.models import (
     User,
     utcnow,
 )
-from app.services import plans as plans_service, reports as rp
+from app.services import notifications, plans as plans_service, reports as rp
 from app.services.debt import overdue_orders, total_debt
 from app.services.fx import today_local
 from app.services.loyalty import recalculate, upcoming_birthdays_filter
@@ -235,18 +235,44 @@ async def sleeping_reminders(session: AsyncSession, day: date) -> int:
     return created
 
 
+async def contract_reminders(session: AsyncSession) -> tuple[int, int]:
+    """Teskari sanoq eslatmalari (7/3/1 kun) va muddati o'tganlarni yopish.
+
+    Qaytaradi: (yuborilgan eslatma, muddati o'tgan shartnoma).
+    """
+    from app.services import contracts as cs
+
+    yuborildi = 0
+    for contract in await cs.active_contracts_all(session):
+        bosqich = cs.reminder_due(contract)
+        if bosqich is None:
+            continue
+        await notifications.contract_reminder(session, contract, bosqich)
+        cs.mark_reminded(contract, bosqich)
+        yuborildi += 1
+
+    # Muddati o'tganlarni yopamiz va xabar beramiz
+    otgan = await cs.expire_overdue(session)
+    for contract in otgan:
+        await notifications.contract_expired(session, contract)
+
+    return yuborildi, len(otgan)
+
+
 async def run_morning_reminders(day: date | None = None) -> None:
     """Har kuni ertalab (09:00) ishlaydigan job."""
     day = day or today_local()
     async with session_scope() as session:
         birthdays = await birthday_reminders(session, day)
         overdue = await overdue_reminders(session, day)
+        contracts_sent, contracts_expired = await contract_reminders(session)
         sleeping = 0
         if day.weekday() == 0:  # faqat dushanba kunlari
             sleeping = await sleeping_reminders(session, day)
     log.info(
-        "Ertalabki eslatmalar: tug'ilgan kun=%s, qarz=%s, uxlagan=%s",
-        birthdays, overdue, sleeping,
+        "Ertalabki eslatmalar: tug'ilgan kun=%s, qarz=%s, uxlagan=%s, "
+        "shartnoma eslatmasi=%s, muddati o'tgan=%s",
+        birthdays, overdue, sleeping, contracts_sent, contracts_expired,
     )
 
 

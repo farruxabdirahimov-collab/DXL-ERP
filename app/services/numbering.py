@@ -15,6 +15,7 @@ PREFIXES = {
     "return": "QAY",      # Qaytarish
     "writeoff": "SPS",    # Spisaniye
     "payment": "TLV",     # To'lov
+    "contract": "SHRT",   # Taklif-shartnoma
 }
 
 

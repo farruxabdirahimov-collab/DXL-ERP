@@ -11,6 +11,14 @@ from app.models.catalog import (
     Warehouse,
     WarehouseKind,
 )
+from app.models.contracts import (
+    CONTRACT_STATUS_UZ,
+    GIFT_STATUS_UZ,
+    Contract,
+    ContractStatus,
+    GiftStatus,
+    Tariff,
+)
 from app.models.content import (
     AUDIENCE_LABELS_UZ,
     POST_LABELS_UZ,
@@ -107,6 +115,12 @@ __all__ = [
     "PaymentMethod",
     "Post",
     "PostKind",
+    "CONTRACT_STATUS_UZ",
+    "Contract",
+    "ContractStatus",
+    "GIFT_STATUS_UZ",
+    "GiftStatus",
+    "Tariff",
     "Product",
     "ProductCategory",
     "Receipt",

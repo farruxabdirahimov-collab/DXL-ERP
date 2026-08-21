@@ -62,4 +62,11 @@ async def create_payment(
     await session.flush()
 
     advance = await allocate_payment(session, payment)
+
+    # Taklif-shartnomaga ham yozamiz: muddati eng yaqinidan boshlab.
+    # Shunda vrach sovg'ani yo'qotmaydi (odatdagi FIFO buni kafolatlamaydi).
+    from app.services import contracts as contracts_service
+
+    await contracts_service.apply_payment(session, doctor.id, amount_usd)
+
     return payment, advance
