@@ -4,9 +4,12 @@ import { useCan } from '../App'
 import {
   useCheckIn,
   useCreatePayment,
+  useContracts,
+  useCreateContract,
   useDoctor,
   useDoctorDebt,
   useDoctorHistory,
+  useTariffs,
   useFxRate,
   useOrders,
 } from '../api/hooks'
@@ -26,6 +29,7 @@ import {
   Sheet,
   Stat,
 } from '../components/ui'
+import Countdown from '../components/Countdown'
 import { DoctorForm } from './Doctors'
 
 export default function DoctorPage() {
@@ -37,10 +41,15 @@ export default function DoctorPage() {
   const { data: doctor, isLoading, error } = useDoctor(doctorId)
   const { data: debt } = useDoctorDebt(doctorId)
   const { data: history } = useDoctorHistory(doctorId)
+  const { data: contracts } = useContracts({ doctor_id: doctorId })
+  const { data: tariffs } = useTariffs()
+  const createContract = useCreateContract()
   const { data: orders } = useOrders({ doctor_id: doctorId, limit: 15 })
   const { data: fx } = useFxRate()
 
   const [payOpen, setPayOpen] = useState(false)
+  const [contractOpen, setContractOpen] = useState(false)
+  const [tariffId, setTariffId] = useState<number | undefined>()
   const [editOpen, setEditOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('cash')
@@ -228,6 +237,54 @@ export default function DoctorPage() {
         </Section>
       ) : null}
 
+      {/* Taklif-shartnoma: amaldagisi sanoq bilan, yo'q bo'lsa tuzish tugmasi */}
+      {can('contracts.view') ? (
+        <Section title="Taklif-shartnoma">
+          {(contracts ?? [])
+            .filter((c: any) => c.status === 'active')
+            .map((c: any) => (
+              <Card key={c.id} className="mb-2 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-semibold">{c.tariff_name}</div>
+                    <div className="text-[12px] text-[var(--muted)]">
+                      {c.number} · {num(c.package_qty)} dona ·{' '}
+                      {usd(c.package_price_usd)}
+                    </div>
+                  </div>
+                  <Countdown
+                    deadline={c.deadline_at}
+                    serverNow={c.server_now}
+                    size="sm"
+                  />
+                </div>
+                <div className="mt-2 flex justify-between text-[12px] text-[var(--muted)]">
+                  <span>To‘langan {usd(c.paid_usd)}</span>
+                  <span>{usd(c.remaining_usd)} qoldi</span>
+                </div>
+                {c.gift_name ? (
+                  <div className="mt-1 text-[13px]">
+                    🎁 {c.gift_name} — {c.gift_status_label}
+                  </div>
+                ) : null}
+              </Card>
+            ))}
+
+          {!(contracts ?? []).some((c: any) => c.status === 'active') ? (
+            can('contracts.create') ? (
+              <button
+                className="btn btn-primary w-full"
+                onClick={() => setContractOpen(true)}
+              >
+                📝 Shartnoma tuzish
+              </button>
+            ) : (
+              <Empty text="Amaldagi shartnoma yo‘q" />
+            )
+          ) : null}
+        </Section>
+      ) : null}
+
       {history && history.summary.orders_count > 0 ? (
         <>
           <Section title="Mini hisobot">
@@ -336,6 +393,77 @@ export default function DoctorPage() {
       ) : null}
 
       {/* To'lov oynasi */}
+      <Sheet
+        open={contractOpen}
+        title="Shartnoma tuzish"
+        onClose={() => setContractOpen(false)}
+      >
+        <p className="mb-3 text-[13px] text-[var(--muted)]">
+          Teskari sanoq <b>hozirdan</b> boshlanadi. Vrach muddat ichida to‘liq
+          to‘lasa sovg‘ani oladi.
+        </p>
+        <Field label="Tarifni tanlang">
+          <select
+            className="select"
+            value={tariffId ?? ''}
+            onChange={(e) => setTariffId(Number(e.target.value) || undefined)}
+          >
+            <option value="">— tanlang —</option>
+            {(tariffs ?? []).map((t: any) => (
+              <option key={t.id} value={t.id}>
+                {t.name} · {num(t.package_qty)} dona · {usd(t.package_price_usd)} ·{' '}
+                {t.term_days} kun
+              </option>
+            ))}
+          </select>
+        </Field>
+        {tariffId ? (
+          <Card className="mb-3 p-3 text-[13px]">
+            {(() => {
+              const t = (tariffs ?? []).find((x: any) => x.id === tariffId)
+              if (!t) return null
+              return (
+                <>
+                  <div className="flex justify-between py-0.5">
+                    <span className="text-[var(--muted)]">Dona narxi</span>
+                    <b>{usd(t.unit_price_usd)}</b>
+                  </div>
+                  <div className="flex justify-between py-0.5">
+                    <span className="text-[var(--muted)]">To‘lov muddati</span>
+                    <b>{t.term_days} kun</b>
+                  </div>
+                  {t.gift_name ? (
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-[var(--muted)]">Sovg‘a</span>
+                      <b>🎁 {t.gift_name}</b>
+                    </div>
+                  ) : null}
+                </>
+              )
+            })()}
+          </Card>
+        ) : null}
+        <button
+          className="btn btn-primary w-full"
+          disabled={!tariffId || createContract.isPending}
+          onClick={async () => {
+            try {
+              const r = await createContract.mutateAsync({
+                doctor_id: doctorId,
+                tariff_id: tariffId,
+              })
+              haptic('success')
+              setContractOpen(false)
+              alertUser(`Shartnoma tuzildi: ${r.number}`)
+            } catch (e: any) {
+              alertUser(e?.message ?? 'Tuzilmadi')
+            }
+          }}
+        >
+          {createContract.isPending ? 'Tuzilmoqda…' : 'Shartnomani tuzish'}
+        </button>
+      </Sheet>
+
       <Sheet open={payOpen} title="To‘lov kiritish" onClose={() => setPayOpen(false)}>
         <div className="mb-3 text-[13px] text-[var(--muted)]">
           {doctor.full_name} · qarz {usd(doctor.debt_usd)}

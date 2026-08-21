@@ -86,3 +86,42 @@ async def main() -> None:
 
 if __name__ == "__main__":  # pragma: no cover
     asyncio.run(main())
+
+
+#: Boshlang'ich zinapoya — sovg'a ulushi paket kattalashgani sayin oshadi.
+#: Direktor bularni Mini App'dan o'z raqamlariga moslashi mumkin.
+STARTER_TARIFFS = [
+    # (nom, dona, summa, muddat, sovg'a nomi, sovg'a tannarxi, ulush)
+    ("Sinov-10", 10, "500", 10, "Bor", "15", 10),      # 3%
+    ("Old-20", 20, "1000", 15, "Nakonechnik", "40", 20),  # 4%
+    ("Standart-50", 50, "2500", 25, "Nakonechnik", "125", 30),  # 5%
+    ("Katta-100", 100, "5000", 40, "Nakonechnik + Bor", "300", 40),  # 6%
+]
+
+
+async def seed_tariffs(session: AsyncSession) -> int:
+    """Boshlang'ich tariflarni yuklaydi. Bittasi ham bo'lmasa ishlaydi."""
+    from decimal import Decimal
+
+    from sqlalchemy import func, select
+
+    from app.models import Tariff
+
+    mavjud = (await session.execute(select(func.count(Tariff.id)))).scalar_one()
+    if mavjud:
+        return 0
+
+    for name, qty, price, days, gift, gift_cost, order in STARTER_TARIFFS:
+        session.add(
+            Tariff(
+                name=name,
+                package_qty=qty,
+                package_price_usd=Decimal(price),
+                term_days=days,
+                gift_name=gift,
+                gift_cost_usd=Decimal(gift_cost),
+                sort_order=order,
+            )
+        )
+    await session.flush()
+    return len(STARTER_TARIFFS)

@@ -575,3 +575,66 @@ export const useMyPurchases = () =>
     queryKey: ['my-purchases'],
     queryFn: () => api.get<MyPurchases>('/content/my-purchases'),
   })
+
+/* --------------------------------------------------- taklif-shartnoma */
+export const useTariffs = (onlyActive = true) =>
+  useQuery({
+    queryKey: ['tariffs', onlyActive],
+    queryFn: () => api.get<any[]>('/contracts/tariffs', { only_active: onlyActive }),
+  })
+
+export const useTariffLadder = () =>
+  useQuery({
+    queryKey: ['tariff-ladder'],
+    queryFn: () => api.get<any>('/contracts/tariffs/ladder'),
+  })
+
+export const useSaveTariff = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: number; body: Record<string, unknown> }) =>
+      id
+        ? api.patch<any>(`/contracts/tariffs/${id}`, body)
+        : api.post<any>('/contracts/tariffs', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tariffs'] })
+      qc.invalidateQueries({ queryKey: ['tariff-ladder'] })
+    },
+  })
+}
+
+export const useContracts = (params: Record<string, unknown> = {}) =>
+  useQuery({
+    queryKey: ['contracts', params],
+    queryFn: () => api.get<any[]>('/contracts', params),
+  })
+
+export const useAtRisk = (days = 3) =>
+  useQuery({
+    queryKey: ['contracts-at-risk', days],
+    queryFn: () => api.get<any>('/contracts/at-risk', { days }),
+  })
+
+export const useCreateContract = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: unknown) => api.post<any>('/contracts', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contracts'] })
+      qc.invalidateQueries({ queryKey: ['contracts-at-risk'] })
+      qc.invalidateQueries({ queryKey: ['doctor'] })
+    },
+  })
+}
+
+export const useContractAction = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, action }: { id: number; action: 'gift' | 'cancel' }) =>
+      api.post<OkResponse>(`/contracts/${id}/${action}`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contracts'] })
+      qc.invalidateQueries({ queryKey: ['contracts-at-risk'] })
+    },
+  })
+}

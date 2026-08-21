@@ -356,3 +356,30 @@ async def test_qaytarish_zanjiri_sovgani_bekor_qiladi(session, base_data):
     assert c.gift_status is GiftStatus.LOST
     assert c.returned_usd == Decimal("200.00")
     assert "qaytarilgani" in c.gift_note
+
+
+async def test_boshlangich_zinapoya_togri(session):
+    """Seed tariflar zinapoya qoidasiga mos bo'lishi kerak."""
+    from seed.load import seed_tariffs
+
+    assert await seed_tariffs(session) == 4
+    assert await seed_tariffs(session) == 0, "ikkinchi marta takrorlanmasin"
+
+    from sqlalchemy import select
+
+    rows = (
+        await session.execute(select(Tariff).order_by(Tariff.package_price_usd))
+    ).scalars().all()
+
+    ulushlar = [float(t.gift_share_pct) for t in rows]
+    assert ulushlar == sorted(ulushlar), "ulush oshib borishi kerak"
+    assert ulushlar == [3.0, 4.0, 5.0, 6.0]
+
+    # Dona narxi hamma tarifda bir xil — $50
+    assert {float(t.unit_price_usd) for t in rows} == {50.0}
+
+    # Vrach $5000 sarflasa: katta paket eng ko'p sovg'a berishi kerak
+    sovgalar = [
+        float(t.gift_cost_usd) * (5000 / float(t.package_price_usd)) for t in rows
+    ]
+    assert sovgalar == sorted(sovgalar), "ko'proq olish foydaliroq bo'lsin"

@@ -26,6 +26,8 @@ export default function More() {
       { to: '/orders', label: 'Buyurtmalar', icon: '📋', show: can('orders.view') },
       { to: '/payments', label: 'To‘lovlar', icon: '💰', show: can('payments.view') },
       { to: '/debts', label: 'Qarzdorlik', icon: '💳', show: can('payments.view') },
+      { to: '/contracts', label: 'Shartnomalar', icon: '📝', show: can('contracts.view') },
+      { to: '/tariffs', label: 'Tariflar', icon: '🏷️', show: can('tariffs.manage') },
       { to: '/returns', label: 'Qaytarishlar', icon: '↩️', show: can('returns.create') },
       { to: '/content', label: 'Bilim va rassilka', icon: '📚', show: can('content.view') },
       { to: '/reports', label: 'Hisobotlar', icon: '📈', show: can('reports.view') },

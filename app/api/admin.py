@@ -205,17 +205,18 @@ async def seed_catalog(
     Keyin uni Excel orqali o'z prays-listingiz bilan almashtirish mumkin.
     Mahsulotlar SKU bo'yicha yangilanadi, ombor qoldig'iga tegilmaydi.
     """
-    from seed.load import seed_products
+    from seed.load import seed_products, seed_tariffs
 
     created, updated = await seed_products(session)
+    tariffs = await seed_tariffs(session)
     await log_action(
         session, actor, "import", "product", None,
         new={"yangi": created, "yangilandi": updated, "manba": "boshlangich katalog"},
     )
-    return OkOut(
-        ok=True,
-        message=f"Katalog yuklandi: {created} ta yangi, {updated} tasi yangilandi",
-    )
+    message = f"Katalog yuklandi: {created} ta yangi, {updated} tasi yangilandi"
+    if tariffs:
+        message += f". {tariffs} ta boshlang'ich tarif ham qo'shildi"
+    return OkOut(ok=True, message=message)
 
 
 @router.delete("/invites/{invite_id}", response_model=OkOut)

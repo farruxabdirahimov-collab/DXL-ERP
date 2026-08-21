@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { useMyDebt, useMyPurchases, usePayments } from '../api/hooks'
+import { useContracts, useMyDebt, useMyPurchases, usePayments } from '../api/hooks'
 import { CATEGORY_LABELS, dateTime, num, shortDate, usd, uzs } from '../lib/format'
+import Countdown from '../components/Countdown'
 import {
   Card,
   Chip,
   Empty,
   ErrorBox,
   Loading,
+  Progress,
   Row,
   Screen,
   Section,
@@ -25,6 +27,7 @@ export default function MyDebt() {
   const { data, isLoading, error } = useMyDebt()
   const { data: payments } = usePayments({ limit: 100 })
   const { data: purchases } = useMyPurchases()
+  const { data: contracts } = useContracts({ status: 'active' })
 
   if (isLoading) return <Loading />
   if (error) return <ErrorBox error={error} />
@@ -54,6 +57,45 @@ export default function MyDebt() {
           tone={overdue ? 'danger' : 'ok'}
         />
       </div>
+
+      {/* Teskari sanoq — vrachning asosiy harakati shu yerdan boshlanadi.
+          Sovg'aning pul qiymati ko'rsatilmaydi, faqat nomi. */}
+      {(contracts ?? []).map((c: any) => (
+        <Card key={c.id} className="mb-3 p-4 text-center">
+          <div className="text-[12px] uppercase tracking-wide text-[var(--muted)]">
+            {c.tariff_name} · {c.number}
+          </div>
+
+          <div className="my-3">
+            <Countdown deadline={c.deadline_at} serverNow={c.server_now} />
+          </div>
+
+          <Progress percent={c.paid_pct} height={10} />
+          <div className="mt-1 flex justify-between text-[12px] text-[var(--muted)]">
+            <span>
+              To‘langan {usd(c.paid_usd)} / {usd(c.package_price_usd)}
+            </span>
+            <span>{Math.round(c.paid_pct)}%</span>
+          </div>
+
+          {Number(c.remaining_usd) > 0 ? (
+            <div className="mt-3 rounded-xl bg-[var(--bg-soft)] p-3">
+              <div className="text-[13px] text-[var(--muted)]">
+                Sovg‘ani olish uchun
+              </div>
+              <div className="text-[22px] font-bold">{usd(c.remaining_usd)}</div>
+              {c.gift_name ? (
+                <div className="mt-1 text-[14px]">🎁 {c.gift_name}</div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-3 text-[14px] font-semibold text-[var(--ok)]">
+              ✅ To‘liq to‘landi
+              {c.gift_name ? ` — sovg‘angiz: ${c.gift_name}` : ''}
+            </div>
+          )}
+        </Card>
+      ))}
 
       {overdue ? (
         <Card className="mb-3">
