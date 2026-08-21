@@ -41,8 +41,14 @@ def upgrade() -> None:
             sa.Column("sort_order", sa.Integer(), nullable=False, server_default="100"),
             sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.Column("note", sa.Text()),
-            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+            sa.Column(
+                "created_at", sa.DateTime(timezone=True),
+                server_default=sa.text("now()"), nullable=False,
+            ),
+            sa.Column(
+                "updated_at", sa.DateTime(timezone=True),
+                server_default=sa.text("now()"), nullable=False,
+            ),
         )
 
     if "contracts" not in tables:
@@ -75,11 +81,21 @@ def upgrade() -> None:
             sa.Column("note", sa.Text()),
             sa.Column("created_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL")),
             sa.Column("reminders_sent", sa.String(32)),
-            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+            sa.Column(
+                "created_at", sa.DateTime(timezone=True),
+                server_default=sa.text("now()"), nullable=False,
+            ),
+            sa.Column(
+                "updated_at", sa.DateTime(timezone=True),
+                server_default=sa.text("now()"), nullable=False,
+            ),
         )
-        for col in ("doctor_id", "tariff_id", "agent_id", "signed_at", "deadline_at", "status", "gift_status"):
+        for col in (
+            "doctor_id", "tariff_id", "agent_id", "signed_at",
+            "deadline_at", "status", "gift_status", "created_at",
+        ):
             op.create_index(f"ix_contracts_{col}", "contracts", [col])
+        op.create_index("ix_tariffs_created_at", "tariffs", ["created_at"])
 
     # Buyurtma qaysi shartnoma hisobidan ketganini bog'laymiz
     if "orders" in tables and not _has_column("orders", "contract_id"):

@@ -7,6 +7,9 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from collections import deque
+from datetime import datetime
+
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -30,10 +33,15 @@ WEB_DIST = BASE_DIR / settings.web_dist
 STATE: dict[str, object] = {
     "db": "kutilmoqda",
     "bot": "kutilmoqda",
+    "migratsiya": "kutilmoqda",
     "scheduler": "kutilmoqda",
     "ready": False,
     "error": None,
 }
+
+#: So'rovlar paytida yuz bergan oxirgi xatolar — `/api/diagnostics` ko'rsatadi.
+#: Deploydan keyin nima ishlamayotganini log ochmasdan bilish uchun.
+SONGGI_XATOLAR: deque = deque(maxlen=10)
 
 #: Bazaga ulanish va migratsiya uchun eng ko'p kutish vaqti.
 #: Qayta urinishlar va migratsiya shu ichiga sig'ishi kerak (healthcheck kutmaydi).
@@ -56,7 +64,13 @@ async def _run_migrations() -> None:
     def _upgrade() -> None:
         command.upgrade(cfg, "head")
 
-    await asyncio.to_thread(_upgrade)
+    try:
+        await asyncio.to_thread(_upgrade)
+    except Exception as exc:
+        STATE["migratsiya"] = f"xato: {type(exc).__name__}: {exc}"
+        log.exception("Migratsiya bajarilmadi — sxema eskirgan holicha qoladi")
+        raise
+    STATE["migratsiya"] = "qo'llandi"
     log.info("Migratsiyalar qo'llandi")
 
 
@@ -281,6 +295,63 @@ async def health() -> dict:
     }
 
 
+# Kutilmagan xato yuz berganda foydalanuvchi bo'sh "500" o'rniga sababni
+# ko'rishi kerak — aks holda muammoni loglarsiz aniqlab bo'lmaydi.
+#: Sxema eskirganini bildiruvchi belgilar. "relation" so'zining o'zi yetarli
+#: emas — PostgreSQL uni deyarli har bir xatoda ishlatadi.
+_SXEMA_ESKI = (
+    "does not exist",
+    "no such table",
+    "no such column",
+    "undefinedtable",
+    "undefinedcolumn",
+)
+_SXEMA_MOS_EMAS = ("not-null constraint", "notnullviolation")
+
+
+def _migratsiya_holati() -> str:
+    return (
+        f"Migratsiya holati: {STATE.get('migratsiya')}.\n"
+        "Railway'da servisni qayta ishga tushiring; muammo qolsa "
+        "/api/diagnostics dagi «migratsiya» va «songgi_xatolar» qatorlarini yuboring."
+    )
+
+
+def _xato_maslahati(exc: Exception) -> str | None:
+    matn = f"{type(exc).__name__} {exc}".lower()
+    if any(k in matn for k in _SXEMA_ESKI):
+        return "Bazada kerakli jadval yoki ustun yo'q — sxema eskirgan.\n" + _migratsiya_holati()
+    if any(k in matn for k in _SXEMA_MOS_EMAS):
+        return (
+            "Baza sxemasi modelga mos emas: majburiy ustunga qiymat tushmadi.\n"
+            + _migratsiya_holati()
+        )
+    if "connect" in matn or "timeout" in matn:
+        return "Bazaga ulanib bo'lmadi. DATABASE_URL va PostgreSQL servisini tekshiring."
+    return None
+
+
+@app.exception_handler(Exception)
+async def kutilmagan_xato(request: Request, exc: Exception) -> JSONResponse:
+    log.exception("So'rovda kutilmagan xato: %s %s", request.method, request.url.path)
+
+    yozuv = {
+        "vaqt": datetime.now(tz=settings.timezone).isoformat(timespec="seconds"),
+        "yol": f"{request.method} {request.url.path}",
+        "xato": f"{type(exc).__name__}: {exc}"[:500],
+    }
+    SONGGI_XATOLAR.append(yozuv)
+
+    maslahat = _xato_maslahati(exc)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": maslahat or f"Kutilmagan xato: {type(exc).__name__}: {exc}"[:500],
+            "yol": yozuv["yol"],
+        },
+    )
+
+
 @app.get("/api/ready")
 async def ready() -> JSONResponse:
     """Batafsil tayyorlik holati (baza ulanmagan bo'lsa 503)."""
@@ -296,6 +367,7 @@ async def diagnostics() -> dict:
     result: dict = {
         "version": __version__,
         "state": dict(STATE),
+        "songgi_xatolar": list(SONGGI_XATOLAR),
         "config": {
             "bot_token_sozlangan": bool(settings.bot_token),
             "webapp_url": settings.webapp_url,
