@@ -31,6 +31,7 @@ export default function More() {
       { to: '/returns', label: 'Qaytarishlar', icon: '↩️', show: can('returns.create') },
       { to: '/content', label: 'Bilim va rassilka', icon: '📚', show: can('content.view') },
       { to: '/reports', label: 'Hisobotlar', icon: '📈', show: can('reports.view') },
+      { to: '/profit', label: 'Foyda-zarar', icon: '💹', show: can('reports.finance') },
       { to: '/plan', label: 'Oylik reja', icon: '🎯', show: can('plans.view') },
       {
         to: '/visits',

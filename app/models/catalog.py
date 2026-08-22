@@ -85,6 +85,11 @@ class Product(Base, TimestampMixin):
     price_usd: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), default=Decimal("0"), nullable=False
     )
+    #: Bizga tushadigan tannarx. Implantlarda hammasi bir xil bo'lgani uchun
+    #: kategoriya bo'yicha bir marta qo'yiladi; istisnolar alohida tahrirlanadi.
+    cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=Decimal("0"), nullable=False
+    )
     min_stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(400))
     description: Mapped[str | None] = mapped_column(Text)

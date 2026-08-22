@@ -166,6 +166,10 @@ class OrderItem(Base):
         Numeric(5, 2), default=Decimal("0"), nullable=False
     )
     line_total_usd: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    #: Yetkazilgan paytdagi tannarx — keyin narx o'zgarsa tarix buzilmaydi
+    cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=Decimal("0"), nullable=False
+    )
 
     order: Mapped[Order] = relationship(back_populates="items")
 
@@ -218,6 +222,10 @@ class ReturnItem(Base):
     qty: Mapped[int] = mapped_column(Integer, nullable=False)
     price_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     line_total_usd: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    #: Qaytarilgan tovar tannarxi — sotilgan tannarxdan ayiriladi
+    cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=Decimal("0"), nullable=False
+    )
 
     parent: Mapped[Return] = relationship(back_populates="items")
 
@@ -259,6 +267,10 @@ class WriteOffItem(Base):
     )
     qty: Mapped[int] = mapped_column(Integer, nullable=False)
     price_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    #: Spisaniye zarari tannarx bo'yicha hisoblanadi
+    cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=Decimal("0"), nullable=False
+    )
 
     parent: Mapped[WriteOff] = relationship(back_populates="items")
 

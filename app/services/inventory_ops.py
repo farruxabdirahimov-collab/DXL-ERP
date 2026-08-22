@@ -99,6 +99,8 @@ async def create_return(
                 qty=qty,
                 price_usd=round_money(unit_price),
                 line_total_usd=line_total,
+                # Qaytgan tovar tannarxi sotilgan tannarxdan ayiriladi
+                cost_usd=Decimal(product.cost_usd),
             )
         )
         total += line_total
@@ -178,7 +180,12 @@ async def create_writeoff(
         price = Decimal(product.price_usd)
         session.add(
             WriteOffItem(
-                writeoff_id=doc.id, product_id=product_id, qty=qty, price_usd=price
+                writeoff_id=doc.id,
+                product_id=product_id,
+                qty=qty,
+                price_usd=price,
+                # Spisaniye zarari tannarx bo'yicha hisoblanadi
+                cost_usd=Decimal(product.cost_usd),
             )
         )
         total += round_money(price * qty)

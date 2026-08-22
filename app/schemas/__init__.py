@@ -614,3 +614,22 @@ class ContractIn(BaseModel):
     doctor_id: int
     tariff_id: int
     note: str | None = None
+
+
+# ------------------------------------------------ tannarx va xarajatlar
+class BulkCostIn(BaseModel):
+    """Kategoriya bo'yicha tannarx — implantlar bir xil narxda bo'lgani uchun."""
+
+    category_id: int | None = None
+    cost_usd: Decimal = Field(ge=0)
+    #: True bo'lsa allaqachon tannarxi borlari ham qayta yoziladi
+    overwrite: bool = False
+
+
+class ExpenseIn(BaseModel):
+    category: str
+    spent_on: date
+    amount_usd: Decimal = Field(gt=0)
+    is_monthly: bool = False
+    ended_on: date | None = None
+    note: str | None = None

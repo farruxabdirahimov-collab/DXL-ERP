@@ -240,6 +240,12 @@ async def deliver(session: AsyncSession, order: Order, actor: User) -> Order:
     doctor = await session.get(Doctor, order.doctor_id)
     assert doctor is not None
 
+    # Tannarxni hujjatga yozib qo'yamiz: keyin prays o'zgarsa ham eski
+    # buyurtmaning foydasi o'zgarmaydi
+    for item in order.items:
+        product = await session.get(Product, item.product_id)
+        item.cost_usd = Decimal(product.cost_usd) if product else ZERO
+
     order.status = OrderStatus.DELIVERED
     order.delivered_at = utcnow()
     order.due_date = compute_due_date(today_local(), doctor)
@@ -327,6 +333,12 @@ async def receive_stock(
 
     total = ZERO
     for product_id, (qty, cost) in merged.items():
+        # Kirimda tannarx ko'rsatilmasa — mahsulotning joriy tannarxini olamiz.
+        # Omborchi har safar raqam yozib o'tirmaydi.
+        if not cost:
+            product = await session.get(Product, product_id)
+            cost = Decimal(product.cost_usd) if product else ZERO
+
         session.add(
             ReceiptItem(
                 receipt_id=receipt.id, product_id=product_id, qty=qty, cost_usd=cost or ZERO

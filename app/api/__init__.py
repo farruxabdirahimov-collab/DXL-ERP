@@ -12,6 +12,7 @@ from app.api import (
     me,
     orders,
     plans,
+    profit,
     reports,
     stock,
     tasks,
@@ -29,6 +30,7 @@ api_router.include_router(orders.router)
 api_router.include_router(finance.router)
 api_router.include_router(reports.router)
 api_router.include_router(plans.router)
+api_router.include_router(profit.router)
 api_router.include_router(visits.router)
 api_router.include_router(tasks.router)
 api_router.include_router(admin.router)

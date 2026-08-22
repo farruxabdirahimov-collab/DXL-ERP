@@ -40,6 +40,11 @@ from app.models.crm import (
     Visit,
     VisitResult,
 )
+from app.models.expenses import (
+    EXPENSE_LABELS_UZ,
+    Expense,
+    ExpenseCategory,
+)
 from app.models.finance import (
     METHOD_LABELS_UZ,
     CompanyPlan,
@@ -118,6 +123,9 @@ __all__ = [
     "PostKind",
     "CONTRACT_STATUS_UZ",
     "CompanyPlan",
+    "EXPENSE_LABELS_UZ",
+    "Expense",
+    "ExpenseCategory",
     "Contract",
     "ContractStatus",
     "GIFT_STATUS_UZ",

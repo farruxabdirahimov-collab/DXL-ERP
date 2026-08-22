@@ -669,3 +669,52 @@ export const usePlanAction = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['plan'] }),
   })
 }
+
+/* ------------------------------------------------ foyda-zarar (Modul 3) */
+export const useProfit = (params: Record<string, unknown> = {}) =>
+  useQuery({
+    queryKey: ['profit', params],
+    queryFn: () => api.get<any>('/profit', params),
+  })
+
+export const useCostStatus = () =>
+  useQuery({
+    queryKey: ['profit', 'cost-status'],
+    queryFn: () => api.get<any>('/profit/cost-status'),
+  })
+
+export const useExpenses = () =>
+  useQuery({
+    queryKey: ['profit', 'expenses'],
+    queryFn: () => api.get<any[]>('/profit/expenses'),
+  })
+
+export const useExpenseCategories = () =>
+  useQuery({
+    queryKey: ['profit', 'expense-categories'],
+    queryFn: () => api.get<any[]>('/profit/expenses/categories'),
+    staleTime: 10 * 60 * 1000,
+  })
+
+/** Tannarx, xarajat qo'shish/o'chirish — hammasi foyda hisobotini yangilaydi. */
+export const useProfitAction = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      path,
+      body,
+      method = 'post',
+    }: {
+      path: string
+      body?: unknown
+      method?: 'post' | 'del'
+    }) =>
+      method === 'del'
+        ? api.del<OkResponse>(path)
+        : api.post<OkResponse>(path, body ?? {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profit'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+}
