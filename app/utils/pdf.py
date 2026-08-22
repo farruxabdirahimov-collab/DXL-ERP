@@ -167,3 +167,154 @@ async def build_invoice_pdf(session: AsyncSession, order) -> io.BytesIO:
     doc.build(story)
     buffer.seek(0)
     return buffer
+
+
+async def build_contract_pdf(session: AsyncSession, contract, doctor) -> io.BytesIO:
+    """Taklif-shartnomaning bosma shakli.
+
+    Vrachga beriladigan hujjat, shuning uchun sovg'aning pul qiymati
+    ko'rsatilmaydi — faqat nomi.
+    """
+    from app.services.settings_service import get_setting
+
+    company = await get_setting(session, "company_name") or "DXL Dental Implant"
+    phone = await get_setting(session, "company_phone") or ""
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+        title=safe(contract.number),
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "ContractTitle", parent=styles["Title"], fontSize=16, spaceAfter=4
+    )
+    small = ParagraphStyle("ContractSmall", parent=styles["Normal"], fontSize=9)
+    normal = ParagraphStyle(
+        "ContractNormal", parent=styles["Normal"], fontSize=10, leading=15
+    )
+
+    story: list = [
+        Paragraph(safe(company), title_style),
+        Paragraph(safe(f"Tel: {phone}") if phone else "", small),
+        Spacer(1, 8 * mm),
+        Paragraph(safe(f"TAKLIF-SHARTNOMA  {contract.number}"), styles["Heading2"]),
+        Spacer(1, 3 * mm),
+    ]
+
+    info_rows = [
+        ["Sana:", safe(fmt_short_date(contract.signed_at))],
+        ["Vrach:", safe(doctor.full_name)],
+        ["Klinika:", safe(doctor.clinic_name or "-")],
+        ["Telefon:", safe(doctor.phone)],
+        ["Tarif:", safe(contract.tariff_name)],
+    ]
+    info_table = Table(info_rows, colWidths=[38 * mm, 120 * mm])
+    info_table.setStyle(
+        TableStyle(
+            [
+                ("FONTSIZE", (0, 0), (-1, -1), 9.5),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#555555")),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    story += [info_table, Spacer(1, 6 * mm)]
+
+    # Shartlar jadvali — vrach imzolaydigan asosiy qism
+    shartlar = [
+        ["Shart", "Qiymat"],
+        ["Implant soni", safe(f"{contract.package_qty} dona")],
+        ["Paket summasi", safe(money_usd(contract.package_price_usd))],
+        [
+            "Dona narxi",
+            safe(
+                money_usd(
+                    Decimal(contract.package_price_usd) / contract.package_qty
+                    if contract.package_qty
+                    else Decimal("0")
+                )
+            ),
+        ],
+        ["To'lov muddati", safe(f"{contract.term_days} kun")],
+        ["To'lov oxirgi sanasi", safe(fmt_short_date(contract.deadline_at))],
+        ["Sovg'a (muddatida to'lansa)", safe(contract.gift_name or "-")],
+    ]
+    table = Table(shartlar, colWidths=[70 * mm, 90 * mm], repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F6FEB")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTSIZE", (0, 0), (-1, -1), 9.5),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CCCCCC")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F5F7FA")]),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("FONTNAME", (0, 6), (-1, 6), "Helvetica-Bold"),
+            ]
+        )
+    )
+    story += [table, Spacer(1, 7 * mm)]
+
+    story += [
+        Paragraph(safe("SHARTLAR"), styles["Heading4"]),
+        Paragraph(
+            safe(
+                "1. Implant narxi paket ichida qat'iy. Razmerni vrach o'zi "
+                "tanlaydi, narx o'zgarmaydi."
+            ),
+            normal,
+        ),
+        Paragraph(
+            safe(
+                "2. Sovg'a paket summasi muddat ichida TO'LIQ to'langanda "
+                "beriladi. Qisman to'lov sovg'a huquqini bermaydi."
+            ),
+            normal,
+        ),
+        Paragraph(
+            safe(
+                "3. Muddat o'tsa sovg'a berilmaydi. Paket summasi o'zgarmaydi "
+                "va odatdagi tartibda to'lanadi."
+            ),
+            normal,
+        ),
+        Paragraph(
+            safe(
+                "4. Tovar qaytarilsa sovg'a bekor bo'ladi, qarz esa "
+                "qaytarilgan summaga kamayadi."
+            ),
+            normal,
+        ),
+        Spacer(1, 14 * mm),
+    ]
+
+    imzo = [
+        ["Yetkazib beruvchi", "Vrach"],
+        [safe(company), safe(doctor.full_name)],
+        ["_______________________", "_______________________"],
+    ]
+    imzo_table = Table(imzo, colWidths=[80 * mm, 80 * mm])
+    imzo_table.setStyle(
+        TableStyle(
+            [
+                ("FONTSIZE", (0, 0), (-1, -1), 9.5),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#555555")),
+                ("TOPPADDING", (0, 2), (-1, 2), 12),
+            ]
+        )
+    )
+    story.append(imzo_table)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer

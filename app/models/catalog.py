@@ -35,6 +35,7 @@ class MoveKind(str, enum.Enum):
     SALE = "sale"          # Sotuv (chiqim)
     RETURN = "return"      # Vrachdan qaytarish (kirim)
     WRITEOFF = "writeoff"  # Spisaniye (chiqim)
+    GIFT = "gift"          # Shartnoma sovg'asi (chiqim) — sotuv emas
     ADJUST = "adjust"      # Inventarizatsiya korreksiyasi
 
 
@@ -42,6 +43,7 @@ MOVE_LABELS_UZ: dict[MoveKind, str] = {
     MoveKind.IN: "Kirim",
     MoveKind.TRANSFER: "Ko'chirish",
     MoveKind.SALE: "Sotuv",
+    MoveKind.GIFT: "Sovg'a",
     MoveKind.RETURN: "Qaytarish",
     MoveKind.WRITEOFF: "Spisaniye",
     MoveKind.ADJUST: "Korreksiya",

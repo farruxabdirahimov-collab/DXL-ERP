@@ -383,3 +383,146 @@ async def test_boshlangich_zinapoya_togri(session):
         float(t.gift_cost_usd) * (5000 / float(t.package_price_usd)) for t in rows
     ]
     assert sovgalar == sorted(sovgalar), "ko'proq olish foydaliroq bo'lsin"
+
+
+# ============================================================ Modul 1 yakuni
+async def test_sovga_ombordan_chiqadi(session, base_data):
+    """Sovg'a katalog mahsuloti bo'lsa — qoldiq kamayadi."""
+    from app.models import MoveKind, StockMove
+    from app.services import stock as stock_service
+    from sqlalchemy import select
+
+    sovga_mahsulot = base_data["cap"]
+    await stock_service.apply_move(
+        session, kind=MoveKind.IN, product_id=sovga_mahsulot.id, qty=5,
+        to_warehouse_id=base_data["warehouse"].id, doc_type="receipt", doc_id=1,
+    )
+
+    tariff = await _tarif(session, price="1000", days=15, gift="Nakonechnik")
+    tariff.gift_product_id = sovga_mahsulot.id
+    await session.flush()
+
+    c = await cs.create_contract(
+        session, doctor=base_data["doctor"], tariff=tariff, actor=base_data["agent"]
+    )
+    await cs.apply_payment(session, base_data["doctor"].id, Decimal("1000"))
+    assert c.gift_status is GiftStatus.EARNED
+
+    oldin = await stock_service.get_qty(
+        session, base_data["warehouse"].id, sovga_mahsulot.id
+    )
+    await cs.issue_gift(
+        session, c, base_data["keeper"], warehouse_id=base_data["warehouse"].id
+    )
+    keyin = await stock_service.get_qty(
+        session, base_data["warehouse"].id, sovga_mahsulot.id
+    )
+
+    assert keyin == oldin - 1, "sovg'a ombordan yechilishi kerak"
+    assert c.gift_status is GiftStatus.ISSUED
+
+    # Harakat «sovg'a» turi bilan yoziladi — sotuv ham, spisaniye ham emas
+    move = (
+        await session.execute(
+            select(StockMove).where(StockMove.doc_type == "contract_gift")
+        )
+    ).scalars().one()
+    assert move.kind is MoveKind.GIFT
+    assert move.doc_id == c.id
+
+
+async def test_katalogsiz_sovga_omborga_tegmaydi(session, base_data):
+    """Sovg'a katalogda bo'lmasa (masalan «Chet el safari») ombor o'zgarmaydi."""
+    from app.models import StockMove
+    from sqlalchemy import func, select
+
+    tariff = await _tarif(session, price="1000", days=15, gift="Chet el safari")
+    c = await cs.create_contract(
+        session, doctor=base_data["doctor"], tariff=tariff, actor=base_data["agent"]
+    )
+    await cs.apply_payment(session, base_data["doctor"].id, Decimal("1000"))
+    await cs.issue_gift(session, c, base_data["keeper"])
+
+    assert c.gift_status is GiftStatus.ISSUED
+    soni = (
+        await session.execute(
+            select(func.count(StockMove.id)).where(StockMove.doc_type == "contract_gift")
+        )
+    ).scalar_one()
+    assert soni == 0
+
+
+async def test_kutayotgan_sovgalar_royxati(session, base_data):
+    """Ombor nechta sovg'a tayyorlashini bilishi kerak."""
+    tariff = await _tarif(session, price="1000", days=15)
+    c = await cs.create_contract(
+        session, doctor=base_data["doctor"], tariff=tariff, actor=base_data["agent"]
+    )
+    assert await cs.pending_gifts(session) == []
+
+    await cs.apply_payment(session, base_data["doctor"].id, Decimal("1000"))
+    assert await cs.pending_gifts(session) == [c]
+
+    await cs.issue_gift(session, c, base_data["keeper"])
+    assert await cs.pending_gifts(session) == [], "berilgani ro'yxatdan chiqadi"
+
+
+async def test_buyurtma_ochiq_shartnomaga_boglanadi(session, base_data):
+    """Agent hech narsani eslab qolmaydi — bog'lanish avtomatik."""
+    from app.api.orders import create_order
+    from app.models import MoveKind
+    from app.schemas import OrderIn, OrderLineIn
+    from app.services import stock as stock_service
+
+    await stock_service.apply_move(
+        session, kind=MoveKind.IN, product_id=base_data["implant"].id, qty=20,
+        to_warehouse_id=base_data["warehouse"].id, doc_type="receipt", doc_id=1,
+    )
+    tariff = await _tarif(session, price="1000", days=15)
+    c = await cs.create_contract(
+        session, doctor=base_data["doctor"], tariff=tariff, actor=base_data["agent"]
+    )
+
+    payload = OrderIn(
+        doctor_id=base_data["doctor"].id,
+        warehouse_id=base_data["warehouse"].id,
+        lines=[OrderLineIn(product_id=base_data["implant"].id, qty=2)],
+    )
+    out = await create_order(payload, session, base_data["agent"])
+
+    assert out.contract_number == c.number
+    assert out.contract_tariff == c.tariff_name
+
+
+async def test_shartnomasiz_buyurtma_ham_ishlaydi(session, base_data):
+    from app.api.orders import create_order
+    from app.models import MoveKind
+    from app.schemas import OrderIn, OrderLineIn
+    from app.services import stock as stock_service
+
+    await stock_service.apply_move(
+        session, kind=MoveKind.IN, product_id=base_data["implant"].id, qty=20,
+        to_warehouse_id=base_data["warehouse"].id, doc_type="receipt", doc_id=1,
+    )
+    payload = OrderIn(
+        doctor_id=base_data["doctor"].id,
+        warehouse_id=base_data["warehouse"].id,
+        lines=[OrderLineIn(product_id=base_data["implant"].id, qty=1)],
+    )
+    out = await create_order(payload, session, base_data["agent"])
+    assert out.contract_number is None
+
+
+async def test_shartnoma_pdf_yasaladi(session, base_data):
+    from app.utils.pdf import build_contract_pdf
+
+    tariff = await _tarif(session, name="PROFI-100", qty=100, price="5000",
+                          days=54, gift="DXL Master Kit yoki Chet el safari")
+    c = await cs.create_contract(
+        session, doctor=base_data["doctor"], tariff=tariff, actor=base_data["agent"]
+    )
+
+    stream = await build_contract_pdf(session, c, base_data["doctor"])
+    data = stream.getvalue()
+    assert data.startswith(b"%PDF"), "haqiqiy PDF bo'lishi kerak"
+    assert len(data) > 2000

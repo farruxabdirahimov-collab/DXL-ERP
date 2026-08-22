@@ -327,12 +327,58 @@ def mark_reminded(contract: Contract, stage: int) -> None:
 
 # ------------------------------------------------------------- sovg'a
 async def issue_gift(
-    session: AsyncSession, contract: Contract, actor: User
+    session: AsyncSession,
+    contract: Contract,
+    actor: User,
+    *,
+    warehouse_id: int | None = None,
 ) -> None:
-    """Sovg'ani jismonan berilgan deb belgilaydi."""
+    """Sovg'ani berilgan deb belgilaydi va ombordan chiqaradi.
+
+    Sovg'a katalogdagi mahsulot bo'lsa (`tariffs.gift_product_id`), qoldiq
+    kamayadi. Harakat `MoveKind.GIFT` bilan yoziladi — sotuv ham, spisaniye
+    ham emas, shuning uchun hisobotlar chalkashmaydi.
+    """
     if contract.gift_status is not GiftStatus.EARNED:
         raise ContractError("Bu shartnomada sovg'a qozonilmagan")
+
+    from app.models import MoveKind, Tariff
+    from app.services import stock as stock_service
+
+    product_id = None
+    if contract.tariff_id:
+        tariff = await session.get(Tariff, contract.tariff_id)
+        product_id = tariff.gift_product_id if tariff else None
+
+    if product_id:
+        if warehouse_id is None:
+            warehouse_id = (await stock_service.main_warehouse(session)).id
+        await stock_service.apply_move(
+            session,
+            kind=MoveKind.GIFT,
+            product_id=product_id,
+            qty=1,
+            from_warehouse_id=warehouse_id,
+            doc_type="contract_gift",
+            doc_id=contract.id,
+            user=actor,
+            note=f"{contract.number} sovg'asi: {contract.gift_name or ''}".strip(),
+        )
+
     contract.gift_status = GiftStatus.ISSUED
     contract.gift_issued_at = utcnow()
     contract.gift_issued_by_id = actor.id
     await session.flush()
+
+
+async def pending_gifts(session: AsyncSession) -> list[Contract]:
+    """Qozonilgan, lekin hali berilmagan sovg'alar — ombor tayyor tursin."""
+    return list(
+        (
+            await session.execute(
+                select(Contract)
+                .where(Contract.gift_status == GiftStatus.EARNED)
+                .order_by(Contract.closed_at)
+            )
+        ).scalars().all()
+    )

@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCan, useCurrentUser } from '../App'
-import { useAtRisk, useContractAction, useContracts } from '../api/hooks'
+import {
+  useAtRisk,
+  useContractAction,
+  useContracts,
+  usePendingGifts,
+} from '../api/hooks'
+import { api } from '../api/client'
 import { num, shortDate, usd } from '../lib/format'
 import { alertUser, haptic } from '../lib/telegram'
 import Countdown from '../components/Countdown'
@@ -18,6 +24,7 @@ import {
 
 const TABS = [
   { key: 'risk', label: 'Xavf ostida' },
+  { key: 'gifts', label: 'Sovg‘alar' },
   { key: 'active', label: 'Amalda' },
   { key: 'all', label: 'Hammasi' },
 ]
@@ -30,13 +37,27 @@ export default function Contracts() {
 
   const risk = useAtRisk(3)
   const active = useContracts({ status: 'active' })
+  const gifts = usePendingGifts()
   const all = useContracts({ limit: 100 })
   const action = useContractAction()
 
   const rows =
-    tab === 'risk' ? (risk.data?.contracts ?? []) : tab === 'active' ? (active.data ?? []) : (all.data ?? [])
-  const loading = tab === 'risk' ? risk.isLoading : tab === 'active' ? active.isLoading : all.isLoading
-  const error = risk.error ?? active.error ?? all.error
+    tab === 'risk'
+      ? (risk.data?.contracts ?? [])
+      : tab === 'gifts'
+        ? (gifts.data ?? [])
+        : tab === 'active'
+          ? (active.data ?? [])
+          : (all.data ?? [])
+  const loading =
+    tab === 'risk'
+      ? risk.isLoading
+      : tab === 'gifts'
+        ? gifts.isLoading
+        : tab === 'active'
+          ? active.isLoading
+          : all.isLoading
+  const error = risk.error ?? gifts.error ?? active.error ?? all.error
 
   async function sovgaBerish(id: number) {
     try {
@@ -71,7 +92,19 @@ export default function Contracts() {
         </Card>
       ) : null}
 
-      <Section title={tab === 'risk' ? 'Shoshilinch' : 'Ro‘yxat'}>
+      {tab === 'gifts' && rows.length > 0 ? (
+        <Card className="mb-3 p-3 text-[13px] text-[var(--muted)]">
+          Bu vrachlar shartnomani muddatida yopdi — <b>{rows.length} ta sovg‘a</b>{' '}
+          tayyorlash kerak. «Sovg‘ani berdim» bosilganda katalogdagi mahsulot
+          ombordan yechiladi.
+        </Card>
+      ) : null}
+
+      <Section
+        title={
+          tab === 'risk' ? 'Shoshilinch' : tab === 'gifts' ? 'Tayyorlash kerak' : 'Ro‘yxat'
+        }
+      >
         {rows.map((c: any) => (
           <Card key={c.id} className="mb-2 p-3">
             <div className="mb-2 flex items-start justify-between gap-2">
@@ -154,7 +187,9 @@ export default function Contracts() {
             text={
               tab === 'risk'
                 ? 'Yaqin kunlarda muddati tugaydigan shartnoma yo‘q'
-                : 'Shartnoma yo‘q'
+                : tab === 'gifts'
+                  ? 'Kutayotgan sovg‘a yo‘q'
+                  : 'Shartnoma yo‘q'
             }
           />
         ) : null}

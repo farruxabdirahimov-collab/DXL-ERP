@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCan } from '../App'
-import { useSaveTariff, useTariffLadder } from '../api/hooks'
+import { useProducts, useSaveTariff, useTariffLadder } from '../api/hooks'
 import { num, usd } from '../lib/format'
 import { alertUser, haptic } from '../lib/telegram'
 import {
@@ -22,6 +22,7 @@ const BOSH: Record<string, string> = {
   term_days: '',
   gift_name: '',
   gift_cost_usd: '',
+  gift_product_id: '',
 }
 
 export default function Tariffs() {
@@ -29,6 +30,7 @@ export default function Tariffs() {
   const canEdit = can('tariffs.manage')
   const { data, isLoading, error } = useTariffLadder()
   const save = useSaveTariff()
+  const { data: products } = useProducts({ limit: 500 })
 
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<number | undefined>()
@@ -56,6 +58,7 @@ export default function Tariffs() {
             term_days: String(tariff.term_days),
             gift_name: tariff.gift_name ?? '',
             gift_cost_usd: String(tariff.gift_cost_usd ?? ''),
+            gift_product_id: tariff.gift_product_id ? String(tariff.gift_product_id) : '',
           }
         : BOSH,
     )
@@ -77,6 +80,7 @@ export default function Tariffs() {
           term_days: days,
           gift_name: form.gift_name || null,
           gift_cost_usd: form.gift_cost_usd || '0',
+          gift_product_id: Number(form.gift_product_id) || null,
           is_active: true,
         },
       })
@@ -197,6 +201,23 @@ export default function Tariffs() {
             value={form.gift_cost_usd}
             onChange={(e) => set('gift_cost_usd', e.target.value)}
           />
+        </Field>
+        <Field
+          label="Sovg‘a katalogdagi mahsulotmi?"
+          hint="Tanlansa — sovg‘a berilganda ombordan yechiladi"
+        >
+          <select
+            className="select"
+            value={form.gift_product_id}
+            onChange={(e) => set('gift_product_id', e.target.value)}
+          >
+            <option value="">— ombordan yechilmasin —</option>
+            {(products ?? []).map((pr: any) => (
+              <option key={pr.id} value={pr.id}>
+                {pr.name}
+              </option>
+            ))}
+          </select>
         </Field>
 
         {/* Raqam kiritilayotganda foyda darhol ko'rinsin */}

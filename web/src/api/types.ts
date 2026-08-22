@@ -143,6 +143,9 @@ export interface Order {
   agent_name?: string | null
   warehouse_id: number
   warehouse_name?: string | null
+  /** Buyurtma qaysi taklif-shartnoma hisobidan ketgan */
+  contract_number?: string | null
+  contract_tariff?: string | null
   source: 'doctor' | 'agent'
   status: OrderStatus
   status_label?: string | null

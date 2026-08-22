@@ -120,6 +120,9 @@ export default function OrderPage() {
         </Chip>
         <Chip>{order.source === 'doctor' ? 'Vrach bergan' : 'Agent kiritgan'}</Chip>
         {order.warehouse_name ? <Chip>📦 {order.warehouse_name}</Chip> : null}
+        {order.contract_number ? (
+          <Chip>📝 {order.contract_tariff ?? order.contract_number}</Chip>
+        ) : null}
         {order.agent_name ? <Chip>👤 {order.agent_name}</Chip> : null}
       </div>
 

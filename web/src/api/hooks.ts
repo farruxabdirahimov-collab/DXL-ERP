@@ -615,6 +615,12 @@ export const useAtRisk = (days = 3) =>
     queryFn: () => api.get<any>('/contracts/at-risk', { days }),
   })
 
+export const usePendingGifts = () =>
+  useQuery({
+    queryKey: ['contracts-pending-gifts'],
+    queryFn: () => api.get<any[]>('/contracts/gifts/pending'),
+  })
+
 export const useCreateContract = () => {
   const qc = useQueryClient()
   return useMutation({
@@ -635,6 +641,8 @@ export const useContractAction = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contracts'] })
       qc.invalidateQueries({ queryKey: ['contracts-at-risk'] })
+      qc.invalidateQueries({ queryKey: ['contracts-pending-gifts'] })
+      qc.invalidateQueries({ queryKey: ['stock'] })
     },
   })
 }

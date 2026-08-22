@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,9 +33,10 @@ from app.permissions import (
     user_can,
 )
 from app.schemas import ContractIn, OkOut, TariffIn
-from app.services import contracts as cs
+from app.services import contracts as cs, stock as stock_service
 from app.services.fx import round_money
 from app.utils.audit import log_action
+from app.utils.pdf import build_contract_pdf
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
 
@@ -318,20 +320,71 @@ async def create_contract(
     return _contract_out(contract, actor, doctor.full_name)
 
 
+@router.get("/gifts/pending")
+async def pending_gifts(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(CONTRACTS_VIEW)),
+):
+    """Qozonilgan, lekin hali berilmagan sovg'alar — ombor tayyor tursin."""
+    rows = await cs.pending_gifts(session)
+    if doctor_scope(user) is not None:
+        rows = [c for c in rows if c.agent_id == user.id]
+
+    ismlar = {
+        d.id: d.full_name
+        for d in (
+            await session.execute(
+                select(Doctor).where(Doctor.id.in_([c.doctor_id for c in rows] or [0]))
+            )
+        ).scalars().all()
+    }
+    return [_contract_out(c, user, ismlar.get(c.doctor_id)) for c in rows]
+
+
+@router.get("/{contract_id}/shartnoma.pdf")
+async def contract_pdf(
+    contract_id: int,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(CONTRACTS_VIEW)),
+):
+    """Bosma shartnoma (PDF). Vrach imzolashi uchun."""
+    contract = await session.get(Contract, contract_id)
+    if contract is None:
+        raise HTTPException(404, "Shartnoma topilmadi")
+    if doctor_scope(user) is not None and contract.agent_id != user.id:
+        raise HTTPException(403, "Bu shartnoma sizga tegishli emas")
+
+    doctor = await session.get(Doctor, contract.doctor_id)
+    if doctor is None:
+        raise HTTPException(404, "Vrach topilmadi")
+    if user.role is Role.DOCTOR and doctor.user_id != user.id:
+        raise HTTPException(403, "Bu shartnoma sizga tegishli emas")
+
+    stream = await build_contract_pdf(session, contract, doctor)
+    return StreamingResponse(
+        stream,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{contract.number}.pdf"'
+        },
+    )
+
+
 @router.post("/{contract_id}/gift", response_model=OkOut)
 async def issue_gift(
     contract_id: int,
+    warehouse_id: int | None = None,
     session: AsyncSession = Depends(get_session),
     actor: User = Depends(require_perm(GIFTS_ISSUE)),
 ):
-    """Qozonilgan sovg'ani berilgan deb belgilaydi."""
+    """Qozonilgan sovg'ani beradi va (katalog mahsuloti bo'lsa) ombordan chiqaradi."""
     contract = await session.get(Contract, contract_id)
     if contract is None:
         raise HTTPException(404, "Shartnoma topilmadi")
 
     try:
-        await cs.issue_gift(session, contract, actor)
-    except cs.ContractError as exc:
+        await cs.issue_gift(session, contract, actor, warehouse_id=warehouse_id)
+    except (cs.ContractError, stock_service.StockError) as exc:
         raise HTTPException(400, str(exc)) from exc
 
     await log_action(

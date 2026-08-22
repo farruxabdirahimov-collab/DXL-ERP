@@ -31,7 +31,12 @@ from app.permissions import (
     can,
 )
 from app.schemas import CancelIn, OkOut, OrderIn, OrderItemOut, OrderOut
-from app.services import notifications, orders as orders_service, stock as stock_service
+from app.services import (
+    contracts as contracts_service,
+    notifications,
+    orders as orders_service,
+    stock as stock_service,
+)
 from app.services.fx import usd_to_uzs
 from app.utils.audit import log_action
 from app.utils.pdf import build_invoice_pdf
@@ -54,6 +59,14 @@ async def _to_out(session: AsyncSession, order: Order) -> OrderOut:
         out.agent_name = agent.full_name if agent else None
     warehouse = await session.get(Warehouse, order.warehouse_id)
     out.warehouse_name = warehouse.name if warehouse else None
+
+    if order.contract_id:
+        from app.models import Contract
+
+        contract = await session.get(Contract, order.contract_id)
+        if contract is not None:
+            out.contract_number = contract.number
+            out.contract_tariff = contract.tariff_name
 
     items = []
     for item in order.items:
@@ -183,9 +196,21 @@ async def create_order(
     except orders_service.OrderError as exc:
         raise HTTPException(400, str(exc)) from exc
 
+    # Vrachda ochiq taklif-shartnoma bo'lsa buyurtma o'ziga bog'lanadi.
+    # Bir vaqtda bitta shartnoma ochiq bo'lgani uchun tanlash oynasi
+    # kerak emas — agent hech narsani eslab qolishi shart emas.
+    shartnoma = await contracts_service.open_contract(session, doctor.id)
+    if shartnoma is not None:
+        order.contract_id = shartnoma.id
+        await session.flush()
+
     await log_action(
         session, user, "create", "order", order.id,
-        new={"number": order.number, "total_usd": str(order.total_usd)},
+        new={
+            "number": order.number,
+            "total_usd": str(order.total_usd),
+            "shartnoma": shartnoma.number if shartnoma else None,
+        },
     )
     await notifications.order_created(session, order)
     if order.needs_director:

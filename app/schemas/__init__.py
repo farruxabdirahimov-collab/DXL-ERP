@@ -353,6 +353,9 @@ class OrderOut(ORMModel):
     agent_name: str | None = None
     warehouse_id: int
     warehouse_name: str | None = None
+    #: Buyurtma qaysi taklif-shartnoma hisobidan ketgan
+    contract_number: str | None = None
+    contract_tariff: str | None = None
     source: OrderSource
     status: OrderStatus
     status_label: str | None = None
