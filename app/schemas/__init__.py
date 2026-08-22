@@ -422,13 +422,38 @@ class ReturnIn(BaseModel):
 
 
 # -------------------------------------------------------------------- plans
-class PlanIn(BaseModel):
+class PlanTargets(BaseModel):
+    """Reja ko'rsatkichlari. 0 qo'yilsa — bajarilish foiziga kirmaydi."""
+
+    target_amount_usd: Decimal = Field(default=Decimal("0"), ge=0)
+    target_units: int = Field(default=0, ge=0)
+    target_collection_usd: Decimal = Field(default=Decimal("0"), ge=0)
+    target_new_doctors: int = Field(default=0, ge=0)
+    target_active_doctors: int = Field(default=0, ge=0)
+    target_visits: int = Field(default=0, ge=0)
+
+
+class PlanIn(PlanTargets):
     user_id: int
+    year: int = Field(ge=2020, le=2100)
+    month: int = Field(ge=1, le=12)
+
+
+class BulkPlanIn(PlanTargets):
+    """Barcha agentlarga bir xil reja qo'yish."""
+
+    year: int = Field(ge=2020, le=2100)
+    month: int = Field(ge=1, le=12)
+
+
+class CompanyPlanIn(BaseModel):
     year: int = Field(ge=2020, le=2100)
     month: int = Field(ge=1, le=12)
     target_amount_usd: Decimal = Field(default=Decimal("0"), ge=0)
     target_units: int = Field(default=0, ge=0)
     target_collection_usd: Decimal = Field(default=Decimal("0"), ge=0)
+    target_new_doctors: int = Field(default=0, ge=0)
+    note: str | None = None
 
 
 # ------------------------------------------------------------------- visits

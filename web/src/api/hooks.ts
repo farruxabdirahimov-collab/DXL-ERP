@@ -638,3 +638,26 @@ export const useContractAction = () => {
     },
   })
 }
+
+/* ------------------------------------------------- oylik reja (Modul 2) */
+export const useCompanyPlan = (params: Record<string, unknown> = {}) =>
+  useQuery({
+    queryKey: ['plan', 'company', params],
+    queryFn: () => api.get<any>('/plans/company', params),
+  })
+
+export const usePlanHistory = (userId?: number, months = 6) =>
+  useQuery({
+    queryKey: ['plan', 'history', userId ?? 'me', months],
+    queryFn: () => api.get<any[]>('/plans/history', { user_id: userId, months }),
+  })
+
+/** Kompaniya rejasi, ommaviy qo'yish, o'tgan oydan nusxa — bittada. */
+export const usePlanAction = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ path, body }: { path: string; body?: unknown }) =>
+      api.post<OkResponse>(path, body ?? {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['plan'] }),
+  })
+}

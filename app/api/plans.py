@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +12,7 @@ from app.auth import require_perm
 from app.db import get_session
 from app.models import Role, User
 from app.permissions import PLANS_EDIT, PLANS_VIEW, user_can
-from app.schemas import OkOut, PlanIn
+from app.schemas import BulkPlanIn, CompanyPlanIn, OkOut, PlanIn
 from app.services import plans as plans_service
 from app.services.fx import today_local
 from app.utils.audit import log_action
@@ -31,6 +33,15 @@ async def my_plan(
     data["expected_pace_pct"] = plans_service.expected_pace_pct(
         progress.days_passed, progress.days_in_month
     )
+    # «Shu sur'atda oy oxirida qancha bo'ladi va kuniga qancha kerak»
+    data["forecast"] = asdict(
+        plans_service.forecast(
+            progress.amount.fact,
+            progress.amount.target,
+            progress.days_passed,
+            progress.days_in_month,
+        )
+    )
     return data
 
 
@@ -46,6 +57,116 @@ async def leaderboard(
     return [
         {**row.to_dict(), "rank": index + 1} for index, row in enumerate(rows)
     ]
+
+
+# Diqqat: bu yo'llar `/{user_id}` dan OLDIN e'lon qilinadi, aks holda
+# FastAPI «company» va «history» ni user_id deb o'qiydi.
+@router.get("/company")
+async def company_plan(
+    year: int | None = None,
+    month: int | None = None,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(require_perm(PLANS_EDIT)),
+):
+    """Kompaniya rejasi, prognoz va agentlarga taqsimot nazorati."""
+    return await plans_service.company_progress(session, year, month)
+
+
+@router.post("/company", response_model=OkOut)
+async def set_company_plan(
+    payload: CompanyPlanIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(PLANS_EDIT)),
+):
+    await plans_service.upsert_company_plan(
+        session,
+        year=payload.year,
+        month=payload.month,
+        actor=user,
+        target_amount_usd=payload.target_amount_usd,
+        target_units=payload.target_units,
+        target_collection_usd=payload.target_collection_usd,
+        target_new_doctors=payload.target_new_doctors,
+        note=payload.note,
+    )
+    await log_action(
+        session, user, "set_company_plan", "plan",
+        f"{payload.year}-{payload.month:02d}", new=payload.model_dump(mode="json"),
+    )
+    return OkOut(
+        ok=True,
+        message=f"{payload.month}/{payload.year} kompaniya rejasi saqlandi",
+    )
+
+
+@router.get("/history")
+async def plan_history(
+    user_id: int | None = None,
+    months: int = Query(default=6, ge=2, le=24),
+    session: AsyncSession = Depends(get_session),
+    actor: User = Depends(require_perm(PLANS_VIEW)),
+):
+    """Oxirgi oylar bajarilishi — grafik uchun."""
+    target = actor
+    if user_id is not None and user_id != actor.id:
+        if not user_can(actor, PLANS_EDIT):
+            raise HTTPException(403, "Faqat o'z tarixingizni ko'ra olasiz")
+        found = await session.get(User, user_id)
+        if found is None:
+            raise HTTPException(404, "Xodim topilmadi")
+        target = found
+    return await plans_service.history(session, target, months)
+
+
+@router.post("/copy-previous", response_model=OkOut)
+async def copy_previous(
+    year: int,
+    month: int,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(PLANS_EDIT)),
+):
+    """O'tgan oy rejalarini shu oyga nusxalaydi — reja qo'yish bir bosishda."""
+    count = await plans_service.copy_from_previous(
+        session, year=year, month=month, actor=user
+    )
+    await log_action(
+        session, user, "copy_plans", "plan", f"{year}-{month:02d}",
+        new={"nusxalandi": count},
+    )
+    return OkOut(
+        ok=True,
+        message=(
+            f"{count} ta agentga o'tgan oy rejasi nusxalandi"
+            if count
+            else "Nusxalanadigan reja topilmadi (o'tgan oyda reja yo'q yoki hammasi qo'yilgan)"
+        ),
+    )
+
+
+@router.post("/bulk", response_model=OkOut)
+async def bulk_plan(
+    payload: BulkPlanIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(PLANS_EDIT)),
+):
+    """Barcha faol agentlarga bir xil reja qo'yadi."""
+    count = await plans_service.apply_to_all_agents(
+        session,
+        year=payload.year,
+        month=payload.month,
+        actor=user,
+        target_amount_usd=payload.target_amount_usd,
+        target_units=payload.target_units,
+        target_collection_usd=payload.target_collection_usd,
+        target_new_doctors=payload.target_new_doctors,
+        target_active_doctors=payload.target_active_doctors,
+        target_visits=payload.target_visits,
+    )
+    await log_action(
+        session, user, "bulk_plan", "plan", f"{payload.year}-{payload.month:02d}",
+        new=payload.model_dump(mode="json"),
+    )
+    return OkOut(ok=True, message=f"{count} ta agentga reja qo'yildi")
 
 
 @router.get("/{user_id}")
@@ -83,6 +204,9 @@ async def set_plan(
         target_amount_usd=payload.target_amount_usd,
         target_units=payload.target_units,
         target_collection_usd=payload.target_collection_usd,
+        target_new_doctors=payload.target_new_doctors,
+        target_active_doctors=payload.target_active_doctors,
+        target_visits=payload.target_visits,
         actor=user,
     )
     await log_action(

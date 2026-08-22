@@ -91,11 +91,13 @@ if __name__ == "__main__":  # pragma: no cover
 #: Boshlang'ich zinapoya — sovg'a ulushi paket kattalashgani sayin oshadi.
 #: Direktor bularni Mini App'dan o'z raqamlariga moslashi mumkin.
 STARTER_TARIFFS = [
-    # (nom, dona, summa, muddat, sovg'a nomi, sovg'a tannarxi, ulush)
-    ("Sinov-10", 10, "500", 10, "Bor", "15", 10),      # 3%
-    ("Old-20", 20, "1000", 15, "Nakonechnik", "40", 20),  # 4%
-    ("Standart-50", 50, "2500", 25, "Nakonechnik", "125", 30),  # 5%
-    ("Katta-100", 100, "5000", 40, "Nakonechnik + Bor", "300", 40),  # 6%
+    # (nom, dona, summa, muddat, sovg'a nomi, sovg'a tannarxi, tartib)
+    # Sovg'a ulushi paket kattalashgani sayin OSHADI (3 -> 6 -> 6.1 -> 10%),
+    # shunda vrach uchun ko'proq olish foydaliroq bo'ladi.
+    ("START-10", 10, "500", 10, "Belkazin (jarroxlik gupkasi)", "15", 10),
+    ("RITM-20", 20, "1000", 15, "Nakonechnik 20:1", "60", 20),
+    ("USTA-50", 50, "2500", 25, "Postavka-scaner fizdispenser uchun", "152", 30),
+    ("PROFI-100", 100, "5000", 54, "DXL Master Kit yoki Chet el safari", "500", 40),
 ]
 
 

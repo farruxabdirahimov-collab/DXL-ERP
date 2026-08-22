@@ -122,6 +122,13 @@ class SalesPlan(Base, TimestampMixin):
     )
     #: 2) Sotilgan dona
     target_units: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: 4) Oyda nechta yangi vrach ochilsin (ixtiyoriy, 0 = hisobga olinmaydi)
+    target_new_doctors: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: 5) Oyda kamida bir marta buyurtma bergan vrachlar soni
+    target_active_doctors: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: 6) Geolokatsiyali tashriflar soni
+    target_visits: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     #: 3) Vrachlardan yig'ilgan pul (USD)
     target_collection_usd: Mapped[Decimal] = mapped_column(
         Numeric(14, 2), default=Decimal("0"), nullable=False
@@ -142,3 +149,33 @@ class DocCounter(Base):
     prefix: Mapped[str] = mapped_column(String(16), primary_key=True)
     year: Mapped[int] = mapped_column(Integer, primary_key=True)
     last_number: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class CompanyPlan(Base, TimestampMixin):
+    """Kompaniyaning oylik maqsadi — direktor uchun.
+
+    Agentlar rejalarining yig'indisi bundan kam bo'lsa, farq «egasiz reja»
+    bo'lib qoladi: kimdir bajarishi kerak, lekin hech kimga biriktirilmagan.
+    """
+
+    __tablename__ = "company_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    month: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    target_amount_usd: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), default=Decimal("0"), nullable=False
+    )
+    target_units: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    target_collection_usd: Mapped[Decimal] = mapped_column(
+        Numeric(14, 2), default=Decimal("0"), nullable=False
+    )
+    target_new_doctors: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    note: Mapped[str | None] = mapped_column(Text)
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+    __table_args__ = (UniqueConstraint("year", "month", name="company_plan_period"),)

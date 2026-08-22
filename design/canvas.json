@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 794, "h": 1123, "title": "A4 — katalog varag'i", "print": "fixed" },
+    { "file": "Plakat.dc.html", "x": 894, "y": 0, "w": 794, "h": 1123, "title": "A4 — plakat", "print": "fixed" }
+  ],
+  "annotations": [
+    { "id": "izoh-nomlar", "x": 0, "y": -160, "w": 500, "text": "Nomlar konsepsiyasi: nom paketni emas, VRACHNI ta'riflaydi.\nSTART (tanishuv) -> RITM (doimiy ish) -> USTA (tajriba) -> PROFI (eng yuqori daraja).\nShuning uchun kattaroq paket olish - o'zi haqida bayonot." },
+    { "id": "izoh-toldirish", "x": 560, "y": -160, "w": 480, "text": "Ikkalasi ham A4 (794x1123).\n\nChap varaq - agent vrachga ko'rsatadigan batafsil katalog (shartlar bilan).\nO'ng varaq - klinikaga osiladigan yoki Telegramga yuboriladigan plakat: kamroq matn, kattaroq sarlavha.\n\nPlakat sizning tahriringizdan olindi: sovg'a nomlari, telefon va rang zinapoyasi (RITM havorang, USTA ko'k)." },
+    { "id": "note-1", "x": 1781, "y": 334, "w": 240, "text": "" }
+  ],
+  "launch": { "view": "canvas" }
+}

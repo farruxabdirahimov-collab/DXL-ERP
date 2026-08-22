@@ -1,0 +1,46 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 794,
+      "h": 1123,
+      "title": "A4 katalog varag'i"
+    },
+    {
+      "file": "Kvadrat.dc.html",
+      "x": 914,
+      "y": 0,
+      "w": 1080,
+      "h": 1080,
+      "title": "Kvadrat rasm 1080×1080"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "izoh-nomlar",
+      "x": 0,
+      "y": -150,
+      "w": 500,
+      "text": "Nomlar konsepsiyasi: nom paketni emas, VRACHNI ta'riflaydi.\nSTART (tanishuv) -> RITM (doimiy ish) -> USTA (tajriba) -> CHO'QQI (eng yuqori daraja).\nShuning uchun kattaroq paket olish - o'zi haqida bayonot."
+    },
+    {
+      "id": "izoh-toldirish",
+      "x": 560,
+      "y": -150,
+      "w": 460,
+      "text": "To'ldirilishi kerak:\n1) [TELEFON RAQAM] va [TELEGRAM / MANZIL]\n2) Sovg'a nomlari - omborda bor ekanini tasdiqlang\n3) CHO'QQI muddati 45 kun qo'yildi (57 emas) - sabab: 57 kunda kunlik aylanma $88 ga tushadi."
+    },
+    {
+      "id": "note-1",
+      "x": 1581,
+      "y": 334,
+      "w": 240,
+      "text": ""
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

@@ -373,7 +373,7 @@ async def test_boshlangich_zinapoya_togri(session):
 
     ulushlar = [float(t.gift_share_pct) for t in rows]
     assert ulushlar == sorted(ulushlar), "ulush oshib borishi kerak"
-    assert ulushlar == [3.0, 4.0, 5.0, 6.0]
+    assert [round(u, 1) for u in ulushlar] == [3.0, 6.0, 6.1, 10.0]
 
     # Dona narxi hamma tarifda bir xil — $50
     assert {float(t.unit_price_usd) for t in rows} == {50.0}

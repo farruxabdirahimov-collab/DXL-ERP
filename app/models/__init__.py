@@ -42,6 +42,7 @@ from app.models.crm import (
 )
 from app.models.finance import (
     METHOD_LABELS_UZ,
+    CompanyPlan,
     DocCounter,
     FxRate,
     Payment,
@@ -116,6 +117,7 @@ __all__ = [
     "Post",
     "PostKind",
     "CONTRACT_STATUS_UZ",
+    "CompanyPlan",
     "Contract",
     "ContractStatus",
     "GIFT_STATUS_UZ",

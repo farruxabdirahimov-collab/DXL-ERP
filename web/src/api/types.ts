@@ -206,6 +206,16 @@ export interface Metric {
   pct: number
 }
 
+export interface Forecast {
+  /** Shu sur'atda oy oxirida qancha bo'ladi */
+  projected_usd: number
+  projected_pct: number
+  daily_so_far_usd: number
+  /** Rejaga yetish uchun kuniga qancha kerak */
+  daily_needed_usd: number
+  on_track: boolean
+}
+
 export interface PlanProgress {
   user_id: number
   full_name: string
@@ -214,11 +224,16 @@ export interface PlanProgress {
   amount: Metric
   units: Metric
   collection: Metric
+  /** Ixtiyoriy maqsadlar — target 0 bo'lsa umumiy foizga kirmaydi */
+  new_doctors?: Metric
+  active_doctors?: Metric
+  visits?: Metric
   overall_pct: number
   days_passed: number
   days_in_month: number
   has_plan: boolean
   expected_pace_pct?: number
+  forecast?: Forecast
   rank?: number
   target_amount_usd?: string
   target_units?: number

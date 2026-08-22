@@ -318,3 +318,48 @@ async def contract_expired(session: AsyncSession, contract) -> None:
     await notify.send_to_roles(
         session, [Role.DIRECTOR, Role.SUPERADMIN], text, kind="contract_expired_boss"
     )
+
+
+# ----------------------------------------------------- oylik reja (Modul 2)
+#: Qaysi bosqichlarda tabriklanadi
+PLAN_MILESTONES = (50, 80, 100)
+
+
+async def plan_milestone(
+    session: AsyncSession, agent: User, pct: float, stage: int, period: str
+) -> None:
+    """Agent 50/80/100% ga yetganda tabrik. Bir bosqich bir marta."""
+    matn = {
+        50: "🚀 <b>Yarim yo'l bosib o'tildi!</b>\nOylik rejangiz 50% bajarildi.",
+        80: "🔥 <b>80% bajarildi!</b>\nOz qoldi — shu sur'atda davom eting.",
+        100: "🏆 <b>Reja bajarildi!</b>\nTabriklaymiz, oylik rejangizni yopdingiz.",
+    }[stage]
+    await notify.send_to_user_id(
+        session,
+        agent.id,
+        f"{matn}\nJoriy natija: {pct:g}%",
+        kind=f"plan_{stage}",
+        # Bir oyda bir bosqich bir marta
+        dedup_key=f"plan-{agent.id}-{period}-{stage}",
+    )
+    if stage == 100:
+        await notify.send_to_roles(
+            session,
+            [Role.DIRECTOR, Role.SUPERADMIN],
+            f"🏆 <b>{agent.full_name}</b> oylik rejani bajardi ({pct:g}%)",
+            kind="plan_done_boss",
+        )
+
+
+async def plan_behind(
+    session: AsyncSession, agent: User, pct: float, days_left: int, period: str
+) -> None:
+    """Oy oxiriga oz qolganda ortda qolgan agentga eslatma."""
+    await notify.send_to_user_id(
+        session,
+        agent.id,
+        f"⏳ <b>Oyga {days_left} kun qoldi</b>\n"
+        f"Reja bajarilishi: {pct:g}%. Yakunlash uchun harakat qiling.",
+        kind="plan_behind",
+        dedup_key=f"plan-behind-{agent.id}-{period}",
+    )

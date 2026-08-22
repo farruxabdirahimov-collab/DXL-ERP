@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 import logging
 from datetime import date, timedelta
 
@@ -266,13 +267,14 @@ async def run_morning_reminders(day: date | None = None) -> None:
         birthdays = await birthday_reminders(session, day)
         overdue = await overdue_reminders(session, day)
         contracts_sent, contracts_expired = await contract_reminders(session)
+        plan_msgs = await plan_milestones(session, day)
         sleeping = 0
         if day.weekday() == 0:  # faqat dushanba kunlari
             sleeping = await sleeping_reminders(session, day)
     log.info(
         "Ertalabki eslatmalar: tug'ilgan kun=%s, qarz=%s, uxlagan=%s, "
-        "shartnoma eslatmasi=%s, muddati o'tgan=%s",
-        birthdays, overdue, sleeping, contracts_sent, contracts_expired,
+        "shartnoma eslatmasi=%s, muddati o'tgan=%s, reja xabari=%s",
+        birthdays, overdue, sleeping, contracts_sent, contracts_expired, plan_msgs,
     )
 
 
@@ -383,3 +385,44 @@ async def run_daily_fx_check(day: date | None = None) -> None:
             dedup_key=f"fx_missing:{day.isoformat()}",
             button=("Kursni kiritish", "/settings"),
         )
+
+
+async def plan_milestones(session: AsyncSession, day: date) -> int:
+    """Reja bosqichlari (50/80/100%) va oy oxiridagi ogohlantirish.
+
+    Xabar takrorlanmasligini `dedup_key` ta'minlaydi — holat saqlash shart emas.
+    """
+    from app.models import Role, User
+
+    davr = f"{day.year}-{day.month:02d}"
+    kunlar = calendar.monthrange(day.year, day.month)[1]
+    qolgan = kunlar - day.day
+
+    agentlar = (
+        await session.execute(
+            select(User).where(User.role == Role.AGENT, User.is_active.is_(True))
+        )
+    ).scalars().all()
+
+    yuborildi = 0
+    for agent in agentlar:
+        p = await plans_service.progress(session, agent, day.year, day.month)
+        if not p.has_plan:
+            continue
+
+        # Eng yuqori yetilgan bosqich — pastdagilari o'tkazib yuborilsa ham
+        # faqat bittasi yuboriladi (dedup_key eskilarini to'sadi)
+        for bosqich in reversed(notifications.PLAN_MILESTONES):
+            if p.overall_pct >= bosqich:
+                await notifications.plan_milestone(
+                    session, agent, p.overall_pct, bosqich, davr
+                )
+                yuborildi += 1
+                break
+
+        # Oyga 5 kun qolganda 70% dan past bo'lsa — turtki
+        if qolgan == 5 and p.overall_pct < 70:
+            await notifications.plan_behind(session, agent, p.overall_pct, qolgan, davr)
+            yuborildi += 1
+
+    return yuborildi

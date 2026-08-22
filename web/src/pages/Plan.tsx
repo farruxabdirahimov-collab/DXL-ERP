@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { useCan, useCurrentUser } from '../App'
-import { useAgents, useAllPlans, useLeaderboard, useMyPlan, useSetPlan } from '../api/hooks'
+import {
+  useAgents,
+  useAllPlans,
+  useCompanyPlan,
+  useLeaderboard,
+  useMyPlan,
+  usePlanAction,
+  usePlanHistory,
+  useSetPlan,
+} from '../api/hooks'
 import { num, pct, planColor, usd } from '../lib/format'
 import { alertUser, haptic } from '../lib/telegram'
 import {
@@ -11,6 +20,7 @@ import {
   Loading,
   MetricBar,
   Progress,
+  Row,
   Screen,
   Section,
   Sheet,
@@ -26,16 +36,36 @@ export default function Plan() {
   const [editing, setEditing] = useState<{ user_id: number; full_name: string } | null>(
     null,
   )
+  const [companyOpen, setCompanyOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [form, setForm] = useState<Record<string, string>>({})
+  const set = (k: string, v: string) => setForm({ ...form, [k]: v })
 
   const myPlan = useMyPlan()
   const board = useLeaderboard()
   const all = useAllPlans()
+  const company = useCompanyPlan()
+  const historyQ = usePlanHistory(undefined, 6)
+  const planAction = usePlanAction()
+  const bugun = new Date()
+  const davr = { year: bugun.getFullYear(), month: bugun.getMonth() + 1 }
 
   const tabs = [
     ...(me.role === 'agent' ? [{ key: 'my', label: 'Mening rejam' }] : []),
+    ...(canEdit ? [{ key: 'company', label: 'Kompaniya' }] : []),
     { key: 'board', label: 'Reyting' },
     ...(canEdit ? [{ key: 'edit', label: 'Reja qo‘yish' }] : []),
   ]
+
+  async function ishga(path: string, body?: unknown, ok = 'Bajarildi') {
+    try {
+      const r = await planAction.mutateAsync({ path, body })
+      haptic('success')
+      alertUser(r.message ?? ok)
+    } catch (e: any) {
+      alertUser(e?.message ?? 'Bajarilmadi')
+    }
+  }
 
   return (
     <Screen title="Oylik reja" subtitle="Sotuv · dona · yig‘ilgan pul">
@@ -87,6 +117,174 @@ export default function Plan() {
                   percent={myPlan.data.collection.pct}
                 />
               </Card>
+
+              {myPlan.data.forecast ? (
+                <Card className="mt-3 p-3">
+                  <div className="text-[12px] uppercase tracking-wide text-[var(--muted)]">
+                    Shu sur‘atda oy oxirida
+                  </div>
+                  <div
+                    className="text-[24px] font-bold"
+                    style={{ color: planColor(myPlan.data.forecast.projected_pct) }}
+                  >
+                    {usd(myPlan.data.forecast.projected_usd)}
+                  </div>
+                  <div className="mt-1 text-[13px] text-[var(--muted)]">
+                    {myPlan.data.forecast.on_track
+                      ? 'Sur‘atingiz yetarli — shu tarzda davom eting'
+                      : `Rejaga yetish uchun kuniga ${usd(
+                          myPlan.data.forecast.daily_needed_usd,
+                        )} kerak (hozir ${usd(myPlan.data.forecast.daily_so_far_usd)})`}
+                  </div>
+                </Card>
+              ) : null}
+
+              {(historyQ.data ?? []).some((h: any) => h.has_plan) ? (
+                <Section title="Oxirgi 6 oy">
+                  <Card className="p-0">
+                    {(historyQ.data ?? []).map((h: any) => (
+                      <div
+                        key={`${h.year}-${h.month}`}
+                        className="flex items-center gap-3 border-b border-[var(--border)] px-3 py-2 last:border-b-0"
+                      >
+                        <div className="w-12 shrink-0 text-[13px] font-semibold text-[var(--muted)]">
+                          {h.label}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Progress percent={h.overall_pct} height={6} />
+                        </div>
+                        <div
+                          className="w-12 shrink-0 text-right text-[13px] font-bold"
+                          style={{ color: planColor(h.overall_pct) }}
+                        >
+                          {h.has_plan ? pct(h.overall_pct, 0) : '—'}
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                </Section>
+              ) : null}
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      {tab === 'company' && canEdit ? (
+        <>
+          {company.isLoading ? <Loading /> : null}
+          {company.data ? (
+            <>
+              {!company.data.has_plan ? (
+                <Card className="mb-3 p-3 text-[13px] text-[var(--muted)]">
+                  Bu oyga kompaniya rejasi qo‘yilmagan. Pastdagi tugma bilan qo‘ying —
+                  keyin agentlarga taqsimlanganini shu yerda nazorat qilasiz.
+                </Card>
+              ) : null}
+
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <Stat
+                  label="Kompaniya sotuvi"
+                  value={usd(company.data.amount.fact)}
+                  hint={`reja ${usd(company.data.amount.target)}`}
+                  tone={company.data.amount.pct >= 80 ? 'ok' : 'warn'}
+                />
+                <Stat
+                  label="Bajarilish"
+                  value={pct(company.data.amount.pct, 0)}
+                  hint={`${company.data.days_passed}/${company.data.days_in_month} kun`}
+                />
+              </div>
+
+              {/* Prognoz — shu sur'atda oy oxirida qancha bo'ladi */}
+              <Card className="mb-3 p-3">
+                <div className="text-[12px] uppercase tracking-wide text-[var(--muted)]">
+                  Shu sur‘atda oy oxirida
+                </div>
+                <div
+                  className="text-[26px] font-bold"
+                  style={{ color: planColor(company.data.forecast.projected_pct) }}
+                >
+                  {usd(company.data.forecast.projected_usd)}
+                </div>
+                <div className="mt-1 text-[13px] text-[var(--muted)]">
+                  Hozir kuniga {usd(company.data.forecast.daily_so_far_usd)} ·
+                  rejaga yetish uchun{' '}
+                  <b style={{ color: 'var(--fg)' }}>
+                    {usd(company.data.forecast.daily_needed_usd)}/kun
+                  </b>{' '}
+                  kerak
+                </div>
+              </Card>
+
+              {/* Taqsimot nazorati — egasiz reja */}
+              {company.data.unassigned_usd > 0 ? (
+                <Card className="mb-3 border-[var(--warn)] p-3">
+                  <div className="text-[13px] font-semibold text-[var(--warn)]">
+                    ⚠️ {usd(company.data.unassigned_usd)} egasiz
+                  </div>
+                  <div className="mt-1 text-[12px] text-[var(--muted)]">
+                    Kompaniya rejasi {usd(company.data.amount.target)}, agentlarga
+                    bo‘lingani {usd(company.data.assigned_usd)}. Farqni kimdir
+                    bajarishi kerak, lekin hech kimga biriktirilmagan.
+                  </div>
+                </Card>
+              ) : null}
+
+              <Section title="Ko‘rsatkichlar">
+                <Card>
+                  <MetricBar
+                    label="💵 Sotuv summasi ($)"
+                    fact={company.data.amount.fact}
+                    target={company.data.amount.target}
+                    percent={company.data.amount.pct}
+                  />
+                  <MetricBar
+                    label="📦 Sotilgan dona"
+                    fact={company.data.units.fact}
+                    target={company.data.units.target}
+                    percent={company.data.units.pct}
+                  />
+                  <MetricBar
+                    label="💰 Yig‘ilgan pul ($)"
+                    fact={company.data.collection.fact}
+                    target={company.data.collection.target}
+                    percent={company.data.collection.pct}
+                  />
+                  <MetricBar
+                    label="🧑‍⚕️ Yangi vrachlar"
+                    fact={company.data.new_doctors.fact}
+                    target={company.data.new_doctors.target}
+                    percent={company.data.new_doctors.pct}
+                  />
+                </Card>
+              </Section>
+
+              <Section title="Reja qo‘yish">
+                <Card className="p-0">
+                  <Row
+                    title="🏢 Kompaniya rejasini qo‘yish"
+                    subtitle={`${davr.month}/${davr.year}`}
+                    right="›"
+                    onClick={() => setCompanyOpen(true)}
+                  />
+                  <Row
+                    title="📋 O‘tgan oydan nusxa"
+                    subtitle={`${company.data.agents_with_plan}/${company.data.agents_total} agentda reja bor`}
+                    right="›"
+                    onClick={() =>
+                      ishga(
+                        `/plans/copy-previous?year=${davr.year}&month=${davr.month}`,
+                      )
+                    }
+                  />
+                  <Row
+                    title="👥 Hammaga bir xil reja"
+                    subtitle="Barcha faol agentlarga bitta raqam"
+                    right="›"
+                    onClick={() => setBulkOpen(true)}
+                  />
+                </Card>
+              </Section>
             </>
           ) : null}
         </>
@@ -164,6 +362,124 @@ export default function Plan() {
         target={editing}
         onClose={() => setEditing(null)}
       />
+
+      <Sheet
+        open={companyOpen}
+        title="Kompaniya rejasi"
+        onClose={() => setCompanyOpen(false)}
+      >
+        <p className="mb-3 text-[13px] text-[var(--muted)]">
+          {davr.month}/{davr.year} uchun umumiy maqsad. Agentlarga bo‘lingani
+          bundan kam bo‘lsa, farq «egasiz» deb ko‘rsatiladi.
+        </p>
+        <Field label="Sotuv summasi ($)">
+          <input
+            className="input"
+            inputMode="decimal"
+            value={form.c_amount ?? ''}
+            onChange={(e) => set('c_amount', e.target.value)}
+          />
+        </Field>
+        <Field label="Sotilgan dona">
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.c_units ?? ''}
+            onChange={(e) => set('c_units', e.target.value)}
+          />
+        </Field>
+        <Field label="Yig‘iladigan pul ($)">
+          <input
+            className="input"
+            inputMode="decimal"
+            value={form.c_coll ?? ''}
+            onChange={(e) => set('c_coll', e.target.value)}
+          />
+        </Field>
+        <Field label="Yangi vrachlar" hint="Ixtiyoriy — 0 qo‘yilsa hisobga olinmaydi">
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.c_docs ?? ''}
+            onChange={(e) => set('c_docs', e.target.value)}
+          />
+        </Field>
+        <button
+          className="btn btn-primary w-full"
+          disabled={planAction.isPending}
+          onClick={async () => {
+            await ishga('/plans/company', {
+              ...davr,
+              target_amount_usd: form.c_amount || '0',
+              target_units: Number(form.c_units) || 0,
+              target_collection_usd: form.c_coll || '0',
+              target_new_doctors: Number(form.c_docs) || 0,
+            })
+            setCompanyOpen(false)
+          }}
+        >
+          {planAction.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+        </button>
+      </Sheet>
+
+      <Sheet
+        open={bulkOpen}
+        title="Hammaga bir xil reja"
+        onClose={() => setBulkOpen(false)}
+      >
+        <p className="mb-3 text-[13px] text-[var(--muted)]">
+          Barcha faol agentlarga shu raqamlar qo‘yiladi. Mavjud rejalar
+          almashtiriladi.
+        </p>
+        <Field label="Sotuv summasi ($)">
+          <input
+            className="input"
+            inputMode="decimal"
+            value={form.b_amount ?? ''}
+            onChange={(e) => set('b_amount', e.target.value)}
+          />
+        </Field>
+        <Field label="Sotilgan dona">
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.b_units ?? ''}
+            onChange={(e) => set('b_units', e.target.value)}
+          />
+        </Field>
+        <Field label="Yig‘iladigan pul ($)">
+          <input
+            className="input"
+            inputMode="decimal"
+            value={form.b_coll ?? ''}
+            onChange={(e) => set('b_coll', e.target.value)}
+          />
+        </Field>
+        <Field label="Tashriflar" hint="Ixtiyoriy">
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.b_visits ?? ''}
+            onChange={(e) => set('b_visits', e.target.value)}
+          />
+        </Field>
+        <button
+          className="btn btn-primary w-full"
+          disabled={planAction.isPending}
+          onClick={async () => {
+            await ishga('/plans/bulk', {
+              ...davr,
+              target_amount_usd: form.b_amount || '0',
+              target_units: Number(form.b_units) || 0,
+              target_collection_usd: form.b_coll || '0',
+              target_visits: Number(form.b_visits) || 0,
+            })
+            setBulkOpen(false)
+          }}
+        >
+          {planAction.isPending ? 'Saqlanmoqda…' : 'Hammaga qo‘yish'}
+        </button>
+      </Sheet>
     </Screen>
   )
 }
