@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import AgentHome from '../components/AgentHome'
 import {
   Area,
   AreaChart,
@@ -43,7 +44,11 @@ export default function Dashboard() {
   const { data: fx } = useFxRate()
   const { data: tasks } = useTasks()
   const isAgent = me.role === 'agent'
+  // Agent asosiy foydalanuvchi — unga statistika emas, «bugun nima
+  // qilaman» ekrani ko'rsatiladi. Boshqalar odatdagi panelni ko'radi.
   const { data: plan } = useMyPlan()
+
+  if (isAgent) return <AgentHome />
 
   if (isLoading) return <Loading />
   if (error) return <ErrorBox error={error} />

@@ -442,7 +442,12 @@ export const useCheckIn = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: unknown) => api.post<Visit>('/visits', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['visits'] })
+      // Bosh ekrandagi pul va halqa darhol yangilansin — dofamin shu yerda
+      qc.invalidateQueries({ queryKey: ['agent-home'] })
+      qc.invalidateQueries({ queryKey: ['kpi'] })
+    },
   })
 }
 
@@ -750,3 +755,19 @@ export const useKpiAction = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kpi'] }),
   })
 }
+
+/* --------------------------------------------------- agent bosh ekrani */
+export const useAgentHome = () =>
+  useQuery({
+    queryKey: ['agent-home'],
+    queryFn: () => api.get<any>('/kpi/home'),
+    // Har amaldan keyin pul raqami yangilansin
+    staleTime: 0,
+  })
+
+export const useNearbyDoctors = (lat?: number, lon?: number) =>
+  useQuery({
+    queryKey: ['nearby', lat, lon],
+    queryFn: () => api.get<any[]>('/kpi/nearby', { lat, lon }),
+    enabled: lat != null && lon != null,
+  })

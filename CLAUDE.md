@@ -125,6 +125,21 @@ o'ldiradi. Muammo `/api/diagnostics` da ko'rinadi (`migratsiya` holati va
 Kutilmagan xato bo'sh 500 emas, **o'zbekcha sabab** qaytaradi
 (`app/main.py` dagi `kutilmagan_xato`).
 
+## Agent bosh ekrani
+
+`web/src/components/AgentHome.tsx` — agentga statistika emas, «bugun nima
+qilaman» ko'rsatiladi: topgan puli (har amaldan keyin o'sadi), kunlik
+tashrif halqasi, ikki katta tugma, shoshilinch ro'yxat.
+
+Butun ekran **bitta so'rov** oladi (`/kpi/home`) — agent kuniga 10-12
+marta, ko'pincha sekin internetda ochadi.
+
+Kunlik maqsad qat'iy emas: qolgan tashrif ÷ qolgan kun. Ortda qolsa
+ertangi raqam ko'tariladi, oldinda bo'lsa tushadi.
+
+Tashrif qayd etilgach `agent-home` va `kpi` so'rovlari bekor qilinadi —
+pul raqami darhol o'sishi kerak, dofamin shunda.
+
 ## Qilinmagan (ataylab)
 
 - Zaxirani **tiklash** tugmasi — bir noto'g'ri bosish bazani almashtiradi

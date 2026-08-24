@@ -44,6 +44,32 @@ def _out(row: ContentSubmission, agent_name: str | None = None) -> dict:
     }
 
 
+# ------------------------------------------------------------ bosh ekran
+@router.get("/home")
+async def agent_home(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(PLANS_VIEW)),
+):
+    """Agent bosh ekrani — bitta so'rovda pul, kunlik maqsad va shoshilinch."""
+    from app.services import agent_home as home
+
+    return await home.build(session, user)
+
+
+@router.get("/nearby")
+async def nearby(
+    lat: float,
+    lon: float,
+    limit: int = Query(default=5, ge=1, le=10),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_perm(PLANS_VIEW)),
+):
+    """Eng yaqin vrachlar — tashrifni bir bosishda qayd etish uchun."""
+    from app.services import agent_home as home
+
+    return await home.nearby_doctors(session, user, lat, lon, limit)
+
+
 # --------------------------------------------------------------- ish haqi
 @router.get("/my-salary")
 async def my_salary(
