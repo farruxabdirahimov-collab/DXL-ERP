@@ -15,6 +15,7 @@ export default function SettingsPage() {
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [botBusy, setBotBusy] = useState(false)
+  const [backupBusy, setBackupBusy] = useState(false)
   const [rate, setRate] = useState('')
 
   useEffect(() => {
@@ -96,6 +97,41 @@ export default function SettingsPage() {
           <button className="btn w-full" disabled={botBusy} onClick={resetWebhook}>
             {botBusy ? 'Tekshirilmoqda…' : '🔄 Bot aloqasini tiklash'}
           </button>
+        </Card>
+      </Section>
+
+      <Section title="Ma'lumotlar zaxirasi">
+        <Card>
+          <p className="mb-3 text-[13px] text-[var(--muted)]">
+            Zaxira <b>har yakshanba 03:00 da</b> Telegram orqali o'zi keladi.
+            Faylni saqlab qo'ying — baza yo'qolsa shundan tiklanadi.
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="btn flex-1"
+              disabled={backupBusy}
+              onClick={async () => {
+                setBackupBusy(true)
+                try {
+                  const r = await api.post<any>('/admin/backup/send', {})
+                  haptic('success')
+                  alertUser(r.message ?? 'Yuborildi')
+                } catch (e: any) {
+                  alertUser(e?.message ?? 'Yuborilmadi')
+                } finally {
+                  setBackupBusy(false)
+                }
+              }}
+            >
+              {backupBusy ? 'Yuborilmoqda…' : '💾 Telegramga yuborish'}
+            </button>
+            <button
+              className="btn flex-1"
+              onClick={() => api.download('/admin/backup.json.gz')}
+            >
+              ⬇️ Yuklab olish
+            </button>
+          </div>
         </Card>
       </Section>
 

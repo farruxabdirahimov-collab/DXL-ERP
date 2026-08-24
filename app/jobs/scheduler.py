@@ -10,6 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.config import settings
 from app.jobs.daily_report import send_daily_reports
 from app.jobs.reminders import (
+    run_weekly_backup,
     run_daily_fx_check,
     run_monthly_close,
     run_morning_reminders,
@@ -37,6 +38,16 @@ def start_scheduler() -> AsyncIOScheduler:
         name="Kunlik statistika (21:00)",
         replace_existing=True,
         misfire_grace_time=3600,
+    )
+
+    # Haftalik zaxira: yakshanba tunda, ish vaqtiga xalaqit bermaydi
+    scheduler.add_job(
+        run_weekly_backup,
+        CronTrigger(day_of_week="sun", hour=3, minute=0, timezone=tz),
+        id="weekly_backup",
+        name="Haftalik zaxira (yakshanba 03:00)",
+        replace_existing=True,
+        misfire_grace_time=6 * 3600,
     )
 
     reminder_time = settings.reminder_time

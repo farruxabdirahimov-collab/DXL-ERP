@@ -426,3 +426,12 @@ async def plan_milestones(session: AsyncSession, day: date) -> int:
             yuborildi += 1
 
     return yuborildi
+
+
+async def run_weekly_backup() -> None:
+    """Haftalik zaxira — yakshanba 03:00 da direktorga Telegram orqali."""
+    async with session_scope() as session:
+        from app.services import backup
+
+        yuborildi = await backup.send_to_admins(session)
+    log.info("Haftalik zaxira %s ta rahbarga yuborildi", yuborildi)

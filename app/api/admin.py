@@ -235,6 +235,55 @@ async def delete_invite(
     return OkOut(ok=True, message="Taklifnoma bekor qilindi")
 
 
+@router.get("/backup.json.gz")
+async def download_backup(
+    session: AsyncSession = Depends(get_session),
+    actor: User = Depends(require_perm(SETTINGS_MANAGE)),
+):
+    """Zaxirani darhol yuklab olish."""
+    from fastapi.responses import StreamingResponse
+    import io
+
+    from app.services import backup
+
+    data, stats = await backup.dump(session)
+    await log_action(
+        session, actor, "backup", "system", None,
+        new={"yozuvlar": sum(stats.values()), "hajm_kb": round(len(data) / 1024)},
+    )
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/gzip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{backup.filename()}"'
+        },
+    )
+
+
+@router.post("/backup/send", response_model=OkOut)
+async def send_backup(
+    session: AsyncSession = Depends(get_session),
+    actor: User = Depends(require_perm(SETTINGS_MANAGE)),
+):
+    """Zaxirani Telegram orqali rahbariyatga yuboradi.
+
+    Konteyner o'chsa diskdagi fayl yo'qoladi — Telegram esa saqlab qoladi.
+    """
+    from app.services import backup
+
+    yuborildi = await backup.send_to_admins(session)
+    await log_action(session, actor, "backup_send", "system", None,
+                     new={"qabul_qilganlar": yuborildi})
+    return OkOut(
+        ok=True,
+        message=(
+            f"Zaxira {yuborildi} ta rahbarga Telegram orqali yuborildi"
+            if yuborildi
+            else "Yuborilmadi: bot sozlanmagan yoki Telegram ulangan rahbar yo'q"
+        ),
+    )
+
+
 @router.post("/reset-webhook")
 async def reset_webhook(
     actor: User = Depends(require_perm(SETTINGS_MANAGE)),
