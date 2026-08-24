@@ -633,3 +633,17 @@ class ExpenseIn(BaseModel):
     is_monthly: bool = False
     ended_on: date | None = None
     note: str | None = None
+
+
+# ------------------------------------------------------- menejer KPI
+class SubmissionIn(BaseModel):
+    """Menejer post yoki otziv havolasini tashlaydi."""
+
+    kind: str
+    url: str = Field(min_length=5, max_length=500)
+    note: str | None = None
+
+
+class SubmissionReviewIn(BaseModel):
+    approve: bool
+    reason: str | None = None

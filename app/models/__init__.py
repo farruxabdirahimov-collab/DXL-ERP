@@ -45,6 +45,13 @@ from app.models.expenses import (
     Expense,
     ExpenseCategory,
 )
+from app.models.kpi import (
+    SUBMISSION_KIND_UZ,
+    SUBMISSION_STATUS_UZ,
+    ContentSubmission,
+    SubmissionKind,
+    SubmissionStatus,
+)
 from app.models.finance import (
     METHOD_LABELS_UZ,
     CompanyPlan,
@@ -126,6 +133,11 @@ __all__ = [
     "EXPENSE_LABELS_UZ",
     "Expense",
     "ExpenseCategory",
+    "ContentSubmission",
+    "SubmissionKind",
+    "SubmissionStatus",
+    "SUBMISSION_KIND_UZ",
+    "SUBMISSION_STATUS_UZ",
     "Contract",
     "ContractStatus",
     "GIFT_STATUS_UZ",

@@ -33,6 +33,7 @@ export default function More() {
       { to: '/reports', label: 'Hisobotlar', icon: '📈', show: can('reports.view') },
       { to: '/profit', label: 'Foyda-zarar', icon: '💹', show: can('reports.finance') },
       { to: '/plan', label: 'Oylik reja', icon: '🎯', show: can('plans.view') },
+      { to: '/salary', label: 'Oyligim', icon: '💵', show: can('plans.view') },
       {
         to: '/visits',
         label: 'Tashriflar',

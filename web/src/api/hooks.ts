@@ -718,3 +718,35 @@ export const useProfitAction = () => {
     },
   })
 }
+
+/* ------------------------------------------------------- menejer KPI */
+export const useMySalary = () =>
+  useQuery({ queryKey: ['kpi', 'my-salary'], queryFn: () => api.get<any>('/kpi/my-salary') })
+
+export const useSalaries = () =>
+  useQuery({ queryKey: ['kpi', 'salaries'], queryFn: () => api.get<any>('/kpi/salaries') })
+
+export const useSubmissions = (params: Record<string, unknown> = {}) =>
+  useQuery({
+    queryKey: ['kpi', 'submissions', params],
+    queryFn: () => api.get<any[]>('/kpi/submissions', params),
+  })
+
+export const useKpiAction = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      path,
+      body,
+      method = 'post',
+    }: {
+      path: string
+      body?: unknown
+      method?: 'post' | 'del'
+    }) =>
+      method === 'del'
+        ? api.del<OkResponse>(path)
+        : api.post<OkResponse>(path, body ?? {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['kpi'] }),
+  })
+}
