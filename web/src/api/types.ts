@@ -161,6 +161,8 @@ export interface Order {
   due_date: string | null
   needs_director: boolean
   director_reason: string | null
+  /** Qarz limitidan oshgan bo'lsa sabab. Buyurtma to'xtamaydi — direktor keyin ko'radi. */
+  over_limit_reason: string | null
   comment: string | null
   cancel_reason: string | null
   created_at: string

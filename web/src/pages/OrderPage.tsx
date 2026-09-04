@@ -138,6 +138,20 @@ export default function OrderPage() {
         </Card>
       ) : null}
 
+      {order.over_limit_reason ? (
+        // Qarz limitidan oshgan. Buyurtma TO'XTAMAGAN — bu ogohlantirish,
+        // so'rov emas. Direktor «Nazorat» ro'yxatida ham shu belgini ko'radi.
+        <Card className="mb-3">
+          <div className="text-[13px] font-semibold" style={{ color: 'var(--warn)' }}>
+            ⚠️ Qarz limitidan oshgan
+          </div>
+          <div className="mt-1 text-[13px]">{order.over_limit_reason}</div>
+          <div className="mt-1 text-[12px] text-[var(--muted)]">
+            Buyurtma to‘xtatilmadi — direktor keyin nazorat qiladi.
+          </div>
+        </Card>
+      ) : null}
+
       <Section title="Mahsulotlar">
         <Card className="p-0">
           {order.items.map((item) => (

@@ -10,6 +10,9 @@ const TABS: { key: string; label: string; status?: OrderStatus }[] = [
   { key: 'open', label: 'Jarayonda' },
   { key: 'new', label: 'Tasdiq kutmoqda', status: 'new' },
   { key: 'director_review', label: 'Direktor tasdig‘i', status: 'director_review' },
+  // Nazorat — limitdan oshgan buyurtmalar. Ular to'xtatilmagan, shunchaki
+  // keyin ko'rib chiqish uchun bir joyga yig'ilgan.
+  { key: 'over_limit', label: 'Nazorat' },
   { key: 'approved', label: 'Tasdiqlangan', status: 'approved' },
   { key: 'delivered', label: 'Yetkazilgan', status: 'delivered' },
   { key: 'all', label: 'Hammasi' },
@@ -22,9 +25,17 @@ export default function Orders() {
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('status') ?? 'open')
 
+  // «Nazorat» — direktorning ro'yxati. Agentga ko'rsatmaymiz: u baribir
+  // hech narsani hal qilmaydi, faqat menyuni og'irlashtiradi.
+  const tabs = useMemo(
+    () => TABS.filter((t) => t.key !== 'over_limit' || can('orders.director')),
+    [can],
+  )
+
   const params = useMemo(() => {
     const found = TABS.find((t) => t.key === tab)
     if (tab === 'open') return { only_open: true }
+    if (tab === 'over_limit') return { over_limit: true }
     if (tab === 'all') return {}
     return { status: found?.status }
   }, [tab])
@@ -46,11 +57,19 @@ export default function Orders() {
         ) : null
       }
     >
-      <Tabs tabs={TABS} active={tab} onChange={setTab} />
+      <Tabs tabs={tabs} active={tab} onChange={setTab} />
 
       {isLoading ? <Loading /> : null}
       {error ? <ErrorBox error={error} /> : null}
-      {data && data.length === 0 ? <Empty text="Buyurtma yo‘q" /> : null}
+      {data && data.length === 0 ? (
+        <Empty
+          text={
+            tab === 'over_limit'
+              ? 'Limitdan oshgan buyurtma yo‘q'
+              : 'Buyurtma yo‘q'
+          }
+        />
+      ) : null}
 
       <div className="space-y-2">
         {(data ?? []).map((order) => (
@@ -67,6 +86,9 @@ export default function Orders() {
                   </Chip>
                   {order.needs_director && order.status === 'director_review' ? (
                     <Chip color="var(--danger)">⚠️ {order.director_reason}</Chip>
+                  ) : null}
+                  {order.over_limit_reason ? (
+                    <Chip color="var(--warn)">⚠️ Limitdan oshgan</Chip>
                   ) : null}
                 </div>
               </div>

@@ -175,7 +175,13 @@ async def allocate_payment(session: AsyncSession, payment: Payment) -> Decimal:
 async def credit_check(
     session: AsyncSession, doctor: Doctor, new_order_usd: Decimal
 ) -> str | None:
-    """Yangi buyurtma direktor tasdig'ini talab qiladimi? Sabab yoki None."""
+    """Buyurtma qarz chegarasidan oshadimi? Sabab matni yoki None.
+
+    Bu tekshiruv buyurtmani TO'XTATMAYDI. Amalda har bir vrachga qarz
+    beriladi va tasdiq hech qachon rad etilmasdi — ya'ni u nazorat emas,
+    kechikish edi. Endi sabab buyurtmaga yozib qo'yiladi (``over_limit_reason``),
+    direktorga xabar boradi va u «Nazorat» ro'yxatida keyin ko'rib chiqadi.
+    """
     if doctor.credit_block_override:
         return None
 

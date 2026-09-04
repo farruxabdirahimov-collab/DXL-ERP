@@ -363,3 +363,23 @@ async def plan_behind(
         kind="plan_behind",
         dedup_key=f"plan-behind-{agent.id}-{period}",
     )
+
+
+async def order_over_limit(session: AsyncSession, order: Order) -> None:
+    """Qarz limitidan oshgan buyurtma o'tkazildi — direktorga XABAR.
+
+    Bu so'rov emas, ma'lumot: buyurtma allaqachon ketdi. Direktor
+    «Nazorat» ro'yxatida to'liq manzarani ko'radi.
+    """
+    doctor = await _doctor_label(session, order.doctor_id)
+    await notify.send_to_roles(
+        session,
+        [Role.DIRECTOR, Role.SUPERADMIN],
+        f"⚠️ <b>Limitdan oshgan buyurtma</b>\n"
+        f"{order.number} · {doctor}\n"
+        f"Summa: {money_usd(order.total_usd)}\n"
+        f"{order.over_limit_reason}\n\n"
+        "<i>Buyurtma o'tkazildi — bu ogohlantirish, so'rov emas.</i>",
+        kind="order_over_limit",
+        button=("Nazoratni ochish", "/orders?status=over_limit"),
+    )

@@ -57,7 +57,25 @@ yozilib qotib qoladi. Keyin katalog o'zgarsa eski hisobotlar buzilmaydi.
 yozganda qaytarishni ayirishni unutmang: sotuv summasi, dona, mahsulot
 tahlili, razmer talabi, agent rejasi, vrach xarid darajasi, tannarx.
 
-**5. Hisobotlar chalkashmasin.** Har harakat o'z turi bilan yoziladi:
+**5. Direktor tasdig'i faqat CHEGIRMA uchun.** Ikki xil nazorat bor va
+ular ataylab bir xil emas:
+
+| Sabab | Oqibat | Maydon |
+|---|---|---|
+| Chegirma limitdan oshdi | Buyurtma **to'xtaydi** → `director_review` | `needs_director` + `director_reason` |
+| Qarz limitidan oshdi | Buyurtma **o'tadi**, faqat belgilanadi | `over_limit_reason` |
+
+Sabab: real holatda har vrachga qarzga beriladi va direktor bu so'rovlarni
+hech qachon rad etmagan — ya'ni tasdiq nazorat emas, kechikish edi.
+Chegirma esa kamdan-kam bo'ladi va pul darhol foydadan ketadi, shuning
+uchun u haqiqiy qaror.
+
+Limitdan oshgan buyurtma bo'yicha direktorga **xabar** boradi
+(`notifications.order_over_limit` — "so'rov emas"), u Buyurtmalar →
+**«Nazorat»** tabida (`GET /orders?over_limit=true`) va 21:00 hisobotida
+ko'rinadi. Nazorat yo'qolmadi, faqat OLDINDAN emas, KEYIN bo'ladi.
+
+**6. Hisobotlar chalkashmasin.** Har harakat o'z turi bilan yoziladi:
 `SALE` / `RETURN` / `WRITEOFF` / **`GIFT`** (shartnoma sovg'asi — sotuv
 ham, spisaniye ham emas).
 

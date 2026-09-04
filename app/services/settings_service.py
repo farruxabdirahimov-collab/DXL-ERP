@@ -41,11 +41,13 @@ DEFAULT_SETTINGS: dict[str, tuple[Any, str]] = {
     ),
     "block_on_debt_limit": (
         True,
-        "Qarz limiti oshganda yangi buyurtma direktor tasdig'iga yuborilsinmi.",
+        "Qarz limiti oshsa buyurtma belgilanadimi. Buyurtma TO'XTAMAYDI — "
+        "direktor «Nazorat» ro'yxatida keyin ko'radi.",
     ),
     "block_on_overdue": (
         True,
-        "Muddati o'tgan qarzi bor vrachning buyurtmasi direktor tasdig'iga yuborilsinmi.",
+        "Muddati o'tgan qarzi bor vrachning buyurtmasi belgilanadimi. "
+        "Bu ham to'xtatmaydi, faqat nazorat ro'yxatiga tushadi.",
     ),
     "visit_max_distance_m": (
         300,

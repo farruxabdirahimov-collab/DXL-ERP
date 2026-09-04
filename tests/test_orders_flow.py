@@ -126,7 +126,13 @@ async def test_qisman_tolov_eng_eski_qarzdan_yopiladi(session, base_data):
     assert summary.overdue_usd == Decimal("0.00")
 
 
-async def test_qarz_limitidan_oshsa_direktor_tasdigi(session, base_data):
+async def test_qarz_limitidan_oshsa_buyurtma_toxtamaydi(session, base_data):
+    """Qarz limiti buyurtmani BLOKLAMAYDI — faqat belgi qo'yadi.
+
+    Haqiqiy hayotda direktor bu so'rovlarni hech qachon rad etmasdi,
+    shuning uchun tasdiq nazorat emas, kechikish edi. Endi buyurtma
+    darhol o'tadi, sabab yoziladi va direktor keyin «Nazorat»da ko'radi.
+    """
     await _fill_stock(session, base_data, qty=100)
     doctor = base_data["doctor"]
     doctor.debt_limit_usd = Decimal("150")
@@ -140,17 +146,62 @@ async def test_qarz_limitidan_oshsa_direktor_tasdigi(session, base_data):
         source=OrderSource.AGENT,
         warehouse_id=base_data["warehouse"].id,
     )
-    assert order.needs_director is True
-    assert "limit" in (order.director_reason or "").lower()
+    assert order.needs_director is False, "qarz uchun direktor tasdig'i so'ralmaydi"
+    assert order.director_reason is None
+    assert "limit" in (order.over_limit_reason or "").lower()
 
-    # Agent tasdiqlasa — direktor ko'rigiga tushadi
+    # Agent o'zi tasdiqlaydi — direktor ko'rigiga TUSHMAYDI
+    await orders_service.approve(session, order, base_data["agent"])
+    assert order.status is OrderStatus.APPROVED
+
+    # Belgi yo'qolmaydi: direktor keyin ham ko'ra oladi
+    assert order.over_limit_reason
+
+
+async def test_limit_ichidagi_buyurtmada_belgi_yoq(session, base_data):
+    await _fill_stock(session, base_data, qty=100)
+    doctor = base_data["doctor"]
+    doctor.debt_limit_usd = Decimal("100000")
+    await session.flush()
+
+    order = await orders_service.create_order(
+        session,
+        doctor=doctor,
+        lines=[LineInput(base_data["implant"].id, 2)],
+        actor=base_data["agent"],
+        source=OrderSource.AGENT,
+        warehouse_id=base_data["warehouse"].id,
+    )
+    assert order.over_limit_reason is None
+    assert order.needs_director is False
+
+
+async def test_chegirma_bloklaydi_qarz_esa_belgilaydi(session, base_data):
+    """Ikkalasi birga bo'lsa: chegirma to'xtatadi, qarz belgi bo'lib qoladi."""
+    from app.services.settings_service import set_setting
+
+    await set_setting(session, "max_discount_pct_agent", 10)
+    await _fill_stock(session, base_data, qty=100)
+    doctor = base_data["doctor"]
+    doctor.debt_limit_usd = Decimal("50")
+    await session.flush()
+
+    order = await orders_service.create_order(
+        session,
+        doctor=doctor,
+        lines=[LineInput(base_data["implant"].id, 2)],
+        actor=base_data["agent"],
+        source=OrderSource.AGENT,
+        warehouse_id=base_data["warehouse"].id,
+        discount_pct=Decimal("25"),
+    )
+    assert order.needs_director is True
+    assert "chegirma" in (order.director_reason or "").lower()
+    assert "limit" in (order.over_limit_reason or "").lower()
+
+    # Chegirma sababli direktor ko'rigiga tushadi
     await orders_service.approve(session, order, base_data["agent"])
     assert order.status is OrderStatus.DIRECTOR_REVIEW
-
-    # Agent ikkinchi marta ham tasdiqlay olmaydi
-    with pytest.raises(OrderError, match="direktor"):
-        await orders_service.approve(session, order, base_data["agent"])
-
     await orders_service.approve(session, order, base_data["director"])
     assert order.status is OrderStatus.APPROVED
 
@@ -265,3 +316,27 @@ async def test_inventarizatsiya_farqni_yozadi(session, base_data):
     assert await stock_service.get_qty(
         session, base_data["warehouse"].id, base_data["implant"].id
     ) == 17
+
+async def test_kunlik_hisobotda_limitdan_oshgan_blok(session, base_data):
+    """Direktor 21:00 hisobotida limitdan oshganlarni ko'rishi kerak."""
+    from app.jobs.daily_report import build_management_report
+    from app.services.fx import today_local
+
+    await _fill_stock(session, base_data, qty=100)
+    doctor = base_data["doctor"]
+    doctor.debt_limit_usd = Decimal("50")
+    await session.flush()
+
+    order = await orders_service.create_order(
+        session,
+        doctor=doctor,
+        lines=[LineInput(base_data["implant"].id, 2)],
+        actor=base_data["agent"],
+        source=OrderSource.AGENT,
+        warehouse_id=base_data["warehouse"].id,
+    )
+    assert order.over_limit_reason
+
+    text = await build_management_report(session, today_local())
+    assert "Limitdan oshgan buyurtmalar: 1 ta" in text
+    assert order.number in text

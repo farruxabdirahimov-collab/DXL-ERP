@@ -353,6 +353,8 @@ class OrderOut(ORMModel):
     agent_name: str | None = None
     warehouse_id: int
     warehouse_name: str | None = None
+    #: Qarz limitidan oshgan bo'lsa sabab (buyurtma to'xtamagan)
+    over_limit_reason: str | None = None
     #: Buyurtma qaysi taklif-shartnoma hisobidan ketgan
     contract_number: str | None = None
     contract_tariff: str | None = None

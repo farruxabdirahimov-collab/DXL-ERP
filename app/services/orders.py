@@ -158,18 +158,24 @@ async def create_order(
 
     recalc_totals(order, items)
 
-    # Chegirma va qarz nazorati
+    # Ikki xil nazorat, ikki xil oqibat:
+    #
+    #   Chegirma  -> BLOKLAYDI. Kamdan-kam bo'ladi va pul darhol yo'qoladi,
+    #                shuning uchun tasdiq haqiqiy qaror chiqaradi.
+    #   Qarz      -> BLOKLAMAYDI. Amalda hech qachon rad etilmaydi, ya'ni
+    #                tasdiq nazorat emas, kechikish edi. Buyurtma o'tadi,
+    #                sabab yoziladi va direktor «Nazorat»da keyin ko'radi.
     max_discount = Decimal(str(await get_setting(session, "max_discount_pct_agent")))
     effective = effective_discount_pct(order, items, round_money(list_total))
-    reasons: list[str] = []
-    if effective > max_discount:
-        reasons.append(f"Chegirma {effective}% (ruxsat {max_discount}%)")
-    credit_reason = await credit_check(session, doctor, order.total_usd)
-    if credit_reason:
-        reasons.append(credit_reason)
 
-    order.needs_director = bool(reasons)
-    order.director_reason = "; ".join(reasons) if reasons else None
+    order.needs_director = effective > max_discount
+    order.director_reason = (
+        f"Chegirma {effective}% (ruxsat {max_discount}%)"
+        if order.needs_director
+        else None
+    )
+
+    order.over_limit_reason = await credit_check(session, doctor, order.total_usd)
 
     await session.flush()
     await session.refresh(order)

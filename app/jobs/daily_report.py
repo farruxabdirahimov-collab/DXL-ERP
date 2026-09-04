@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import session_scope
-from app.models import Doctor, Role, Task, TaskStatus, User
+from app.models import Doctor, Order, OrderStatus, Role, Task, TaskStatus, User
 from app.services import plans as plans_service, reports as rp
 from app.services.debt import overdue_orders, total_debt
 from app.services.fx import get_rate, today_local
@@ -27,6 +27,26 @@ from app.utils.fmt import (
 )
 
 log = logging.getLogger(__name__)
+
+
+async def _over_limit_today(session: AsyncSession, day: date) -> list[Order]:
+    """Bugun qarz limitidan oshib o'tkazilgan buyurtmalar.
+
+    Ular to'xtatilmagan — direktor keyin ko'rib chiqadi, shuning uchun
+    kunlik hisobotda bir joyda ko'rinishi kerak.
+    """
+    start, end = rp.day_bounds(day)
+    stmt = (
+        select(Order)
+        .where(
+            Order.over_limit_reason.is_not(None),
+            Order.created_at >= start,
+            Order.created_at <= end,
+            Order.status.not_in([OrderStatus.CANCELLED, OrderStatus.REJECTED]),
+        )
+        .order_by(Order.total_usd.desc())
+    )
+    return list((await session.execute(stmt)).scalars().all())
 
 
 async def build_management_report(session: AsyncSession, day: date) -> str:
@@ -79,6 +99,24 @@ async def build_management_report(session: AsyncSession, day: date) -> str:
         f"  ⚠️ Muddati o'tgan: {money_usd(debt['overdue_usd'])}",
         f"  Qarzdor vrachlar: {number(debt['doctors_in_debt'])}",
     ]
+
+    over_limit = await _over_limit_today(session, day)
+    if over_limit:
+        total = sum((order.total_usd for order in over_limit), rp.ZERO)
+        items = []
+        for order in over_limit[:5]:
+            doctor = await session.get(Doctor, order.doctor_id)
+            items.append(
+                f"{doctor.full_name if doctor else '—'} — {money_usd(order.total_usd)} "
+                f"({order.number})"
+            )
+        lines += [
+            "",
+            f"<b>⚠️ Limitdan oshgan buyurtmalar: {len(over_limit)} ta "
+            f"({money_usd(total)})</b>",
+            bullet_list(items, limit=5),
+            "<i>Buyurtmalar o'tkazildi — «Nazorat» ro'yxatida ko'rib chiqing.</i>",
+        ]
 
     overdue = await overdue_orders(session, day)
     if overdue:

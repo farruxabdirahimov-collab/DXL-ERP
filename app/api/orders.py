@@ -108,6 +108,7 @@ async def list_orders(
     doctor_id: int | None = None,
     agent_id: int | None = None,
     only_open: bool = False,
+    over_limit: bool = False,
     limit: int = Query(default=100, le=500),
     offset: int = 0,
     session: AsyncSession = Depends(get_session),
@@ -128,6 +129,8 @@ async def list_orders(
             Order.status.in_([OrderStatus.APPROVED, OrderStatus.PICKING, OrderStatus.SHIPPED])
         )
 
+    if over_limit:
+        stmt = stmt.where(Order.over_limit_reason.is_not(None))
     if status is not None:
         stmt = stmt.where(Order.status == status)
     if doctor_id is not None:
@@ -215,6 +218,9 @@ async def create_order(
     await notifications.order_created(session, order)
     if order.needs_director:
         await notifications.order_needs_director(session, order)
+    if order.over_limit_reason:
+        # Buyurtma to'xtamadi — direktorga faqat xabar beramiz
+        await notifications.order_over_limit(session, order)
 
     return await _to_out(session, order)
 

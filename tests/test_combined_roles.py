@@ -121,7 +121,8 @@ async def test_agent_omborchi_toliq_zanjirni_bajaradi(session, base_data):
     ) == 8
 
     # Ro'yxatda ko'radi
-    rows = await list_orders(None, None, None, False, 50, 0, session, combo)
+    # Nomlangan argument: endpoint imzosiga yangi filtr qo'shilsa ham buzilmaydi
+    rows = await list_orders(limit=50, session=session, user=combo)
     assert any(o.id == order.id for o in rows)
 
 

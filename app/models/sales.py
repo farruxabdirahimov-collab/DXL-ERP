@@ -73,6 +73,11 @@ class Order(Base, TimestampMixin):
     agent_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
+    #: Qarz limitidan oshgan bo'lsa sabab shu yerda. Buyurtma TO'XTAMAYDI —
+    #: direktor keyin «Nazorat» ro'yxatida ko'radi (oldindan tasdiq emas,
+    #: keyingi nazorat). Chegirma esa baribir tasdiq talab qiladi.
+    over_limit_reason: Mapped[str | None] = mapped_column(Text)
+
     #: Taklif-shartnoma hisobidan ketgan bo'lsa — paket narxi shundan olinadi
     contract_id: Mapped[int | None] = mapped_column(
         ForeignKey("contracts.id", ondelete="SET NULL"), index=True
