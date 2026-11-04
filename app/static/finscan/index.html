@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinScan 360 paketi</title>
+<meta name="description" content="O'zingizga mos shartni va raqamlarni kiriting yoki tanlang va to'lov grafigini ko'ring. Tomograf, DXL implant, servis va Lamina ERP bitta paketda, ustamasiz.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FinScan 360 + DXL implant paketi">
+<meta property="og:description" content="O'zingizga mos shartni va raqamlarni kiriting yoki tanlang va to'lov grafigini ko'ring. Ustamasiz, 6–14 oy.">
+<meta property="og:image" content="{{BASE_URL}}/finscan/f/finscan360.jpg">
+<meta property="og:url" content="{{BASE_URL}}/finscan">
+<meta name="theme-color" content="#0B7A75">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Vrachga ko'rsatiladigan versiya — ichki foyda bo'limi va uning kodi ATAYLAB yo'q: sahifa kodi ham vrachga ochiq. */
+:root {
+  --bg: #F1F5F5;
+  --surface: #FFFFFF;
+  --ink: #0C2230;
+  --muted: #55696F;
+  --line: #D3DFE0;
+  --accent: #0B7A75;
+  --accent-soft: #DCEFEE;
+  --warn: #A3570B;
+  --dark: #0C2A3A;
+  --dark-ink: #EAF4F4;
+  --dark-muted: #9DB6BC;
+  --dark-line: #285062;
+  --dark-accent: #52D3C9;
+  --dark-warn: #F2A65A;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Onest", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08171E; --surface: #10242D; --ink: #E5EFF0; --muted: #8FA7AE; --line: #22404A;
+    --accent: #45C4BA; --accent-soft: #123A40; --warn: #E9A85E;
+    --dark: #17475A; --dark-ink: #F0F8F8; --dark-muted: #A8C5CB; --dark-line: #2F6479; --dark-accent: #6FE0D6; --dark-warn: #F5B36E;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #08171E; --surface: #10242D; --ink: #E5EFF0; --muted: #8FA7AE; --line: #22404A;
+  --accent: #45C4BA; --accent-soft: #123A40; --warn: #E9A85E;
+  --dark: #17475A; --dark-ink: #F0F8F8; --dark-muted: #A8C5CB; --dark-line: #2F6479; --dark-accent: #6FE0D6; --dark-warn: #F5B36E;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+h2.sec { font-family: var(--font-display); font-size: 26px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.sec-head p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.sec-head { margin-bottom: 14px; }
+
+/* Header */
+.hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; align-items: center; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(32px, 6vw, 54px); line-height: 1.04; margin: 10px 0 14px; text-wrap: balance; letter-spacing: -.02em; }
+.lead { color: var(--muted); max-width: 52ch; margin: 0; }
+.photo { background: #FFFFFF; border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; justify-content: center; }
+.photo img { display: block; max-height: 280px; width: auto; max-width: 100%; }
+
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid var(--line); margin: 0; }
+.fact { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
+.fact:first-child { border-left: 0; padding-left: 0; }
+.fact dt { font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.fact dd { margin: 4px 0 0; font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1.2; }
+.fact dd small { font-family: var(--font-body); font-weight: 400; font-size: 13px; color: var(--muted); }
+
+/* Controls */
+.cfg { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ctrls { display: flex; flex-direction: column; gap: 12px; }
+.ctrl { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.ctrl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ctrl label, .ctrl .lbl { font-weight: 600; font-size: 15px; }
+.ctrl .hint { font-size: 12px; color: var(--muted); }
+.ctrl .warnmsg { font-size: 13px; color: var(--warn); }
+.numbox { display: flex; align-items: center; gap: 6px; }
+.numbox span { font-family: var(--font-display); font-size: 18px; color: var(--muted); }
+.numbox input { width: 140px; font: 600 20px var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; text-align: right; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+.prices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pbtn { font: inherit; text-align: left; cursor: pointer; background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.pbtn b { font-family: var(--font-display); font-size: 22px; line-height: 1.1; }
+.pbtn span { font-size: 12px; color: var(--muted); }
+.pbtn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pbtn[aria-pressed="true"] b { color: var(--accent); }
+.pbtn:disabled { cursor: not-allowed; opacity: .45; }
+.pbtn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Summary */
+.sum { background: var(--dark); color: var(--dark-ink); border-radius: 14px; padding: 22px 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.sum .m { color: var(--dark-muted); }
+.sum .big { font-family: var(--font-display); font-weight: 700; font-size: clamp(40px, 6vw, 54px); line-height: 1; letter-spacing: -.02em; }
+.sum .big sup { font-size: .45em; vertical-align: top; position: relative; top: .35em; margin-right: 2px; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; }
+.bar i { display: block; transition: width .25s ease; }
+.bar .d { background: var(--dark-accent); }
+.bar .r { background: var(--dark-line); }
+.pay2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pay2 b { display: block; font-family: var(--font-display); font-size: 24px; line-height: 1.15; }
+.pay2 span { font-size: 12px; }
+.sum dl { margin: 0; display: flex; flex-direction: column; }
+.sum dl div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--dark-line); font-size: 14px; }
+.sum dt { color: var(--dark-muted); }
+.sum dd { margin: 0; text-align: right; font-weight: 600; }
+.gift { border-radius: 10px; background: color-mix(in srgb, var(--dark-accent) 16%, transparent); padding: 12px 14px; font-size: 14px; }
+.gift b { color: var(--dark-accent); }
+
+/* ROI */
+.roi-grid { display: flex; flex-direction: column; gap: 16px; }
+.roi-in { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+.help { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); max-width: 60ch; }
+.field { display: flex; flex-direction: column; min-width: 0; }
+.field label { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--ink); line-height: 1.35; }
+.field input { width: 100%; max-width: 260px; font: 600 18px var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.roi-out { background: var(--dark); color: var(--dark-ink); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.roi-out .m { color: var(--dark-muted); }
+.headline { display: flex; flex-direction: column; gap: 2px; }
+.headline b { font-family: var(--font-display); font-size: clamp(40px, 7vw, 58px); line-height: 1; color: var(--dark-accent); letter-spacing: -.02em; }
+.headline span { font-size: 13px; }
+.blocks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.blk { border-top: 2px solid var(--dark-accent); padding-top: 10px; min-width: 0; }
+.blk h3 { font-family: var(--font-display); font-size: 16px; margin: 0 0 6px; }
+.blk h3 span { font-family: var(--font-body); font-weight: 400; font-size: 12px; }
+.blk dl { margin: 0; display: flex; flex-direction: column; }
+.blk dl div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--dark-line); font-size: 13px; }
+.blk dt { color: var(--dark-muted); }
+.blk dd { margin: 0; font-weight: 600; text-align: right; }
+.blk .note { margin: 8px 0 0; font-size: 12px; }
+.blk .note b { font-family: var(--font-display); font-size: 18px; color: var(--dark-accent); }
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--dark-line); padding-top: 14px; }
+.strip div { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; border-left: 1px solid var(--dark-line); min-width: 0; }
+.strip div:first-child { border-left: 0; padding-left: 0; }
+.strip span { font-size: 12px; }
+.strip b { font-family: var(--font-display); font-size: 22px; }
+.neg { color: var(--dark-warn) !important; }
+
+/* Tables */
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+td.neg2 { color: var(--warn); }
+.vs table { min-width: 0; }
+.vs th, .vs td { padding: 9px 10px; }
+.vs tbody th { text-align: left; font-weight: 500; font-size: 14px; white-space: normal; }
+.vs thead th { font-family: var(--font-display); font-size: 15px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.vs td { color: var(--muted); text-align: left; white-space: normal; }
+.vs td.yes { color: var(--accent); font-weight: 600; }
+.vs td.no { color: var(--warn); }
+.lose { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.lose div { border: 1px solid var(--line); border-left: 4px solid var(--warn); background: var(--surface); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.lose span { font-size: 14px; color: var(--muted); }
+.lose b { font-family: var(--font-display); font-size: 24px; color: var(--warn); }
+
+.terms { font-size: 14px; color: var(--muted); display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 32px; margin: 0; padding: 0; list-style: none; }
+.terms li { padding-left: 16px; position: relative; }
+.terms li::before { content: ""; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.terms b { color: var(--ink); font-weight: 600; }
+
+/* Contract */
+.ct-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
+.ct-form { max-width: 560px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.ct-form .field input { max-width: none; font: 500 16px var(--font-body); }
+.dl { font: 600 16px var(--font-body); color: #FFFFFF; background: var(--accent); border: 0; border-radius: 10px; padding: 14px 16px; cursor: pointer; }
+.dl:hover { filter: brightness(1.08); }
+.dl2 { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); padding: 12px 16px; font-weight: 500; font-size: 15px; }
+.dl:disabled { opacity: .6; cursor: wait; }
+.dl:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ct-msg { margin: 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
+.ct-msg.err { color: var(--warn); }
+.ct-msg.ok { color: var(--accent); }
+.ct-open { font-size: 14px; color: var(--accent); font-weight: 600; }
+.cta { display: inline-block; margin-top: 16px; font-weight: 600; font-size: 15px; color: #FFFFFF; background: var(--accent); border-radius: 10px; padding: 12px 16px; text-decoration: none; line-height: 1.35; }
+.to-sched { color: var(--dark-accent); font-weight: 600; font-size: 14px; text-decoration: none; }
+
+/* To'lov grafigi: telefon ekraniga gorizontal aylantirmasdan sig'adi */
+.gr-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; }
+.chart .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; height: 100%; gap: 4px; }
+.chart .stk { display: flex; flex-direction: column-reverse; border-radius: 4px 4px 0 0; overflow: hidden; }
+.chart .stk i { display: block; }
+.chart .p { background: var(--accent); }
+.chart .l { background: var(--accent-soft); }
+.chart .lbl { font: 500 10px/14px var(--font-mono); height: 14px; flex: none; color: var(--muted); text-align: center; white-space: nowrap; }
+.chart .stk { flex: none; }
+.chart-leg { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+.chart-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.lg-pay { background: var(--accent); }
+.lg-left { background: var(--accent-soft); border: 1px solid var(--line); }
+.sched { width: 100%; table-layout: fixed; }
+.sched th, .sched td { padding: 8px 6px; }
+.sched th:nth-child(1), .sched td:nth-child(1) { width: 27%; }
+.sched th:nth-child(2), .sched td:nth-child(2) { width: 25%; }
+.sched td:first-child { font-weight: 500; }
+.sched tr.last td { font-weight: 700; border-top: 2px solid var(--line); }
+.sched-note { margin: 0; font-size: 12px; color: var(--muted); }
+@media (max-width: 420px) {
+  .sched { font-size: 13px; }
+  .sched th, .sched td { padding: 7px 3px; }
+  .sched thead th { font-size: 11px; letter-spacing: 0; }
+  .gr-card { padding: 12px; }
+}
+
+@media (max-width: 880px) {
+  .hero, .cfg, .roi-grid { grid-template-columns: 1fr; }
+  .sum { position: static; }
+  .facts { grid-template-columns: 1fr 1fr; }
+  .fact:nth-child(3) { border-left: 0; padding-left: 0; }
+  .fact:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .blocks { grid-template-columns: 1fr; }
+  .strip { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+  .strip div:nth-child(3) { border-left: 0; padding-left: 0; }
+  .roi-in { grid-template-columns: 1fr; }
+  .field input { max-width: none; }
+  .lose, .terms { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .prices { grid-template-columns: 1fr; }
+  .numbox input { width: 120px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+
+<main class="wrap">
+  <header class="hero">
+    <div>
+      
+      <div class="eyebrow">DXL implant · FinScan</div>
+      <h1>FinScan 360 + DXL implant</h1>
+      <p class="lead">Tomograf, DXL implant, servis va Lamina ERP bitta paketda. Implant sonini, boshlang'ich to'lovni va muddatni o'zingiz tanlang. Ustamasiz.</p>
+      <a class="cta" href="#cfg-h">O'zingizga mos shartni va raqamlarni kiriting yoki tanlang va grafikni ko'ring ↓</a>
+    </div>
+    <div class="photo"><img alt="FinScan 360 konus-nurli kompyuter tomografi" src="/finscan/f/finscan360.jpg" width="583" height="560"></div>
+  </header>
+
+  <dl class="facts">
+    <div class="fact"><dt>Servis</dt><dd>O'sha kuni <small>Xorazm ichida</small></dd></div>
+    <div class="fact"><dt>Ustama</dt><dd>yo'q</dd></div>
+    <div class="fact"><dt>Muddat</dt><dd class="num">6–14 oy</dd></div>
+    <div class="fact"><dt>Lamina ERP</dt><dd>bepul</dd></div>
+  </dl>
+
+  <section aria-labelledby="cfg-h">
+    <div class="sec-head">
+      <h2 class="sec" id="cfg-h">Paketni yig'ing</h2>
+      <p>O'zingizga mos shartni va raqamlarni kiriting yoki tanlang. Narx, oylik to'lov va to'lov grafigi shu zahoti hisoblanadi.</p>
+    </div>
+    <div class="cfg">
+      <form class="ctrls" id="cfg" autocomplete="off">
+        
+        <div class="ctrl">
+          <div class="ctrl-top">
+            <label for="c-n">DXL implant soni</label>
+            <div class="numbox"><input id="c-n" class="fmt" type="text" value="300" inputmode="numeric"><span>ta</span></div>
+          </div>
+          <input id="c-n-r" type="range" min="100" max="1500" step="10" value="300" aria-label="Implant soni surgichi">
+          <div class="scale"><span>100</span><span>500</span><span>1000</span><span>1500</span></div>
+          <div class="warnmsg" id="w-n" hidden></div>
+          <div class="hint">Implantlar oyma-oy, ehtiyojga qarab, to'lov muddati ichida beriladi.</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><span class="lbl" id="p-lbl">Implant narxi, dona</span><span class="hint">soniga qarab o'zi tanlanadi</span></div>
+          <div class="prices" role="group" aria-labelledby="p-lbl">
+            <button type="button" class="pbtn" data-price="49" aria-pressed="false"><b class="num">$49</b><span>100–199 ta</span></button>
+            <button type="button" class="pbtn" data-price="48" aria-pressed="false"><b class="num">$48</b><span>200–300 ta</span></button>
+            <button type="button" class="pbtn" data-price="45" aria-pressed="false"><b class="num">$45</b><span>301 ta va ko'p</span></button>
+          </div>
+          <div class="hint">Boshqa vrachlarga DXL implant $50 dan sotiladi.</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top">
+            <label for="c-down">Boshlang'ich to'lov</label>
+            <div class="numbox"><span>$</span><input id="c-down" class="fmt" type="text" value="18 000" inputmode="numeric"></div>
+          </div>
+          <input id="c-down-r" type="range" min="10000" max="40000" step="500" value="18000" aria-label="Boshlang'ich to'lov surgichi">
+          <div class="scale"><span>$10 000</span><span id="down-max-lbl">$40 000</span></div>
+          <div class="warnmsg" id="w-down" hidden></div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top">
+            <label for="c-term">To'lov muddati</label>
+            <div class="numbox"><input id="c-term" type="text" value="12" inputmode="numeric"><span>oy</span></div>
+          </div>
+          <input id="c-term-r" type="range" min="6" max="14" step="1" value="12" aria-label="Muddat surgichi">
+          <div class="scale"><span>6</span><span>8</span><span>10</span><span>12</span><span>14</span></div>
+        </div>
+      </form>
+
+      <aside class="sum" aria-live="polite">
+        <div>
+          <div class="big num" id="s-total"><sup>$</sup>54 400</div>
+          <span class="m">paket narxi, ustamasiz</span>
+        </div>
+        <div class="bar" aria-hidden="true"><i class="d" id="s-bar-d" style="width:33%"></i><i class="r" id="s-bar-r" style="width:67%"></i></div>
+        <div class="pay2">
+          <div><b class="num" id="s-down">$18 000</b><span class="m">boshlang'ich to'lov</span></div>
+          <div><b class="num" id="s-mon">$2 427</b><span class="m" id="s-mon-l">oyiga × 15 oy</span></div>
+        </div>
+        <dl>
+          <div><dt>FinScan 360, kompyuter, montaj, o'qitish</dt><dd id="s-cbct">paketda</dd></div>
+          <div><dt>DXL implant</dt><dd class="num" id="s-impl">300 ta × $48</dd></div>
+          <div><dt>Oxirgi oy</dt><dd class="num" id="s-last">$2 422</dd></div>
+          <div><dt>Implant oyiga</dt><dd class="num" id="s-ipm">~20 ta</dd></div>
+          <div><dt>Servis</dt><dd>1,5 yil bepul, o'sha kuni</dd></div>
+          <div><dt>Lamina ERP</dt><dd>ulanish va oylik bepul</dd></div>
+        </dl>
+        <div class="gift" id="s-gift"><b>8-oygacha</b> to'liq yopsangiz, <b>5 ta DXL implant</b> sovg'a.</div>
+        <a class="to-sched" href="#gr-h">To'lov grafigini ko'rish ↓</a>
+      </aside>
+    </div>
+  </section>
+
+  <section class="gr" aria-labelledby="gr-h">
+    <div class="sec-head">
+      <h2 class="sec" id="gr-h">To'lov grafigi</h2>
+      <p id="gr-sub">Yuqorida tanlagan shartlaringiz bo'yicha. Shartni o'zgartirsangiz, grafik ham o'zgaradi.</p>
+    </div>
+    <div class="gr-card">
+      <div class="chart" id="k-chart" role="img" aria-label="Qolgan qarz oyma-oy kamayishi"></div>
+      <div class="chart-leg"><span><i class="lg-pay"></i>to'lanadi</span><span><i class="lg-left"></i>qoladi</span></div>
+      <table class="sched">
+        <thead><tr><th>To'lov</th><th>Sana</th><th>Summa</th><th>Qoldiq</th></tr></thead>
+        <tbody id="k-rows"></tbody>
+      </table>
+      <p class="sched-note">Sanalar taxminiy: aniq sana tomograf o'rnatilgan kundan hisoblanadi.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="roi-h">
+    <div class="sec-head">
+      <h2 class="sec" id="roi-h">Klinikangiz nima yutadi</h2>
+      <p>Klinikangiz raqamlarini kiriting. Har bir maydon tagida nimani yozish kerakligi tushuntirilgan. Oylik to'lov yuqoridagi paketdan olinadi.</p>
+    </div>
+    <div class="roi-grid">
+      <form class="roi-in" id="roi" autocomplete="off">
+        <div class="field">
+          <label for="r-ctprice">Bitta tomografiya (CBCT) narxi, so'm</label>
+          <input id="r-ctprice" class="fmt" type="text" value="120 000" inputmode="numeric">
+          <p class="help">Bemordan bitta 3D tomografiya uchun oladigan narxingiz. Urganchda odatda 120 000–150 000 so'm.</p>
+        </div>
+        <div class="field">
+          <label for="r-ctday">Kuniga tomografiyaga tushadigan bemorlar soni</label>
+          <input id="r-ctday" class="fmt" type="text" value="4" inputmode="numeric">
+          <p class="help">Klinikangizda bir kunda nechta bemorga tomografiya kerak bo'ladi: implant, ildiz kanali, tish olish, ortodontiya bemorlari va boshqa vrachlar yuborgan bemorlar. Hozir ularni boshqa joyga yuborasiz. Tomograf bo'lsa, tomografiyani o'zingiz qilasiz va pulini o'zingiz olasiz.</p>
+        </div>
+        <div class="field">
+          <label for="r-days">Oyiga ish kuni</label>
+          <input id="r-days" class="fmt" type="text" value="26" inputmode="numeric">
+          <p class="help">Klinika bir oyda necha kun ishlaydi. Yakshanbasiz odatda 26 kun.</p>
+        </div>
+        <div class="field">
+          <label for="r-pat">Oyiga implant qo'yiladigan bemorlar taxminiy soni</label>
+          <input id="r-pat" class="fmt" type="text" value="15" inputmode="numeric">
+          <p class="help">Bir oyda implant qo'yish uchun keladigan bemorlar soni. Implantlar sonini emas, bemorlar sonini yozing.</p>
+        </div>
+        <div class="field">
+          <label for="r-lost">CBCT sizda yo'q vaqtida tomografiyaga ketib, qaytib kelmagan bemorlar, %</label>
+          <input id="r-lost" class="fmt" type="text" value="40" inputmode="numeric">
+          <p class="help">Tomograf bo'lmasa, implant bemorini tomografiyaga boshqa klinikaga yuborasiz. Ularning bir qismi o'sha yerda davolanib qoladi yoki umuman qaytmaydi. 40% degani: 10 bemordan 4 tasi qaytib kelmaydi. O'z tomografingiz bo'lsa, bu bemorlar sizda qoladi.</p>
+        </div>
+        <div class="field">
+          <label for="r-per">Bir bemorga qo'yiladigan implantlar, o'rtacha</label>
+          <input id="r-per" class="fmt" type="text" value="3" inputmode="numeric">
+          <p class="help">Bir bemorga o'rtacha nechta implant qo'yasiz. Odatda 2–4 ta.</p>
+        </div>
+        <div class="field">
+          <label for="r-profit">Bitta DXL implantdan foyda, $</label>
+          <input id="r-profit" class="fmt" type="text" value="280" inputmode="numeric">
+          <p class="help">Bitta implantdan klinikaga qoladigan sof foyda: implant, abatment, koronka va boshqa xarajatlar chiqarilgandan keyin.</p>
+        </div>
+        <div class="field">
+          <label for="r-rate">Dollar kursi, so'm</label>
+          <input id="r-rate" class="fmt" type="text" value="12 000" inputmode="numeric">
+          <p class="help">To'lov kunidagi kurs bo'yicha hisoblanadi.</p>
+        </div>
+      </form>
+      <div class="roi-out" aria-live="polite">
+        <div class="headline">
+          <span class="m">Oyiga qo'shimcha daromad</span>
+          <b class="num" id="o-gain">$4 400</b>
+          <span class="m num" id="o-gain-som">52 800 000 so'm</span>
+        </div>
+        <div class="blocks">
+          <div class="blk">
+            <h3>Daromad</h3>
+            <dl>
+              <div><dt>O'z tomografiyangizdan</dt><dd class="num" id="o-scan">$1 040</dd></div>
+              <div><dt>Qaytmay ketadigan bemorlar endi sizda qoladi</dt><dd class="num" id="o-ret">$3 360</dd></div>
+            </dl>
+            <p class="note m" id="o-scan-note"></p>
+            <p class="note m" id="o-ret-note"></p>
+          </div>
+          <div class="blk">
+            <h3>Tejash <span class="m">(paket davomida)</span></h3>
+            <dl>
+              <div><dt id="o-impl-l">Implant $48 ($50 o'rniga)</dt><dd class="num" id="o-impl">$600</dd></div>
+              <div><dt>Lamina ERP bepul</dt><dd class="num" id="o-erp">$983</dd></div>
+              <div><dt>O'qitish, implant rejalash</dt><dd>bepul</dd></div>
+            </dl>
+            <p class="note"><b class="num" id="o-save">$1 583</b> <span class="m">jami tejash</span></p>
+          </div>
+          <div class="blk">
+            <h3>Vaqt</h3>
+            <dl>
+              <div><dt>Boshqa klinikaga yuborilmaydi</dt><dd class="num" id="o-pat">104 bemor/oy</dd></div>
+              <div><dt>Servis</dt><dd>o'sha kuni</dd></div>
+              <div><dt>Implant rejasi</dt><dd>birinchi tashrifda</dd></div>
+            </dl>
+          </div>
+        </div>
+        <div class="strip">
+          <div><span class="m">Oylik to'lov</span><b class="num" id="o-pay">$2 427</b></div>
+          <div><span class="m">To'lov paytida qoladi</span><b class="num" id="o-net">+$1 973</b></div>
+          <div><span class="m">To'lov tugagach</span><b class="num" id="o-after">+$4 400</b></div>
+          <div><span class="m">Paket o'zini oqlaydi</span><b class="num" id="o-back">13 oyda</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <section class="contract" aria-labelledby="ct-h">
+    <div class="sec-head">
+      <h2 class="sec" id="ct-h">Ariza yuborish</h2>
+      <p>Ism va telefoningizni yozing, «Ariza yuborish»ni bosing. Tanlagan shartlaringiz va to'lov grafigi bizga o'zi boradi, agentimiz siz bilan bog'lanadi.</p>
+    </div>
+      <form class="ct-form" id="ct" autocomplete="off">
+        <div class="field"><label for="k-name">Klinika nomi yoki vrach ismi *</label><input id="k-name" type="text" placeholder="Masalan: Smile Dent yoki Karimov Alisher"></div>
+        <div class="field"><label for="k-head">Rahbar F.I.Sh.</label><input id="k-head" type="text"></div>
+        <div class="field"><label for="k-phone">Telefon *</label><input id="k-phone" type="tel" inputmode="tel" placeholder="+998 90 123 45 67"></div>
+        <div class="field"><label for="k-addr">Manzil</label><input id="k-addr" type="text"></div>
+        <button type="button" class="dl" id="k-send">Ariza yuborish</button>
+        <button type="button" class="dl dl2" id="k-dl">Shartnoma loyihasini PDF qilib olish</button>
+        <p class="ct-msg" id="k-msg" role="status"></p>
+        <a class="ct-open" id="k-open" href="#" target="_blank" rel="noopener" hidden>PDF yuklanmadimi? Shu yerni bosing</a>
+      </form>
+  </section>
+
+  <section class="vs" aria-labelledby="vs-h">
+    <div class="sec-head"><h2 class="sec" id="vs-h">Biz orqali va bizsiz</h2></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th></th><th>Biz orqali</th><th>Bizsiz</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">FinScan 360 tomograf</th><td>bor</td><td>bor</td></tr>
+          <tr><th scope="row">Bo'lib to'lash</th><td>bor</td><td>bor</td></tr>
+          <tr><th scope="row">Servis</th><td class="yes">o'sha kuni, Xorazm ichida</td><td class="no">2–3 kun, boshqa viloyatdan</td></tr>
+          <tr><th scope="row">DXL implant $45–49 (boshqalarga $50)</th><td class="yes">bor</td><td class="no">yo'q</td></tr>
+          <tr><th scope="row">Lamina ERP, ulanish 10 mln so'm</th><td class="yes">bepul</td><td class="no">yo'q</td></tr>
+          <tr><th scope="row">Implant rejalashtirish, amaliyotchi implantolog bilan</th><td class="yes">bepul</td><td class="no">yo'q</td></tr>
+          <tr><th scope="row">Tomogramma o'qishni o'rgatish</th><td class="yes">bepul</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="lose">
+      <div><span>Tomografni bizsiz olsangiz yo'qotasiz</span><b class="num" id="o-lose">$1 583</b></div>
+      <div><span>Tomografsiz har oy yo'qotasiz</span><b class="num" id="o-lose-m">$4 400</b></div>
+    </div>
+  </section>
+
+  <ul class="terms">
+    <li><b>To'lov.</b> Ustamasiz. Oylik summa o'zgarmaydi, oxirgi oy qoldiqni yopadi. Kechiktirish mumkin emas.</li>
+    <li><b>Valyuta.</b> Narxlar dollarda, to'lov to'lov kunidagi kurs bo'yicha.</li>
+    <li><b>Implantlar.</b> Oyma-oy, ehtiyojga qarab beriladi va to'lov muddati ichida olinadi.</li>
+    <li><b>Kechikish.</b> To'lov 10 kundan ortiq kechiksa, tomograf ishlab chiqaruvchi tomonidan onlayn bloklanadi. To'lov qilingach blok ochiladi.</li>
+    <li><b>Egalik.</b> FinScan 360 klinika nomiga rasmiylashtiriladi, shartnoma tuziladi.</li>
+    <li><b>Erta to'lov.</b> Muddatning yarmigacha to'liq yopsangiz, 5 ta DXL implant sovg'a.</li>
+    <li><b>Servis.</b> 1,5 yil bepul, o'sha kuni, Xorazm ichida.</li>
+    <li><b>Lamina ERP.</b> Ulanish (10 mln so'm) va to'lov muddati davomida oylik to'lov bepul.</li>
+    <li><b>Implant narxi.</b> 100–199 ta $49, 200–300 ta $48, 301 ta va ko'p $45. Kamida 100 ta.</li>
+  </ul>
+</main>
+
+<script>
+(function () {
+  var CBCT_MIN = 40000, DOWN_MIN = 10000, N_MIN = 100, N_MAX = 2000, T_MIN = 6, T_MAX = 14, LIST = 50;
+  var ERP_CONNECT_SOM = 10000000, ERP_MONTH_SOM = 120000;
+  function el(id) { return document.getElementById(id); }
+  function parse(x) { return parseFloat(String(x).replace(/[\s\u00A0]/g, "").replace(",", ".")); }
+  function fmt(n) { return isFinite(n) ? Math.round(n).toLocaleString("en-US").replace(/,/g, " ") : ""; }
+  function val(id, d) { var e = el(id); if (!e) return d; var v = parse(e.value); return isFinite(v) ? v : d; }
+  function sp(n) { return Math.round(Math.abs(n)).toLocaleString("en-US").replace(/,/g, " "); }
+  function usd(n, sign) { var s = n < 0 ? "−" : (sign && n > 0 ? "+" : ""); return s + "$" + sp(n); }
+  function set(id, t) { var e = el(id); if (e) e.textContent = t; }
+  function warn(id, t) { var e = el(id); if (!e) return; e.textContent = t || ""; e.hidden = !t; }
+  function floorPrice(n) { return n >= 301 ? 45 : (n >= 200 ? 48 : 49); }
+  var chosen = null;
+  var btns = Array.prototype.slice.call(document.querySelectorAll(".pbtn"));
+
+  function pair(a, b, onchange) {
+    var A = el(a), B = el(b);
+    A.addEventListener("input", function () { var v = parse(A.value); if (isFinite(v)) B.value = v; onchange(); });
+    B.addEventListener("input", function () { A.value = fmt(+B.value); onchange(); });
+  }
+
+  function state() {
+    var n = Math.round(val("c-n", 300));
+    var nOk = Math.min(Math.max(n, N_MIN), N_MAX);
+    warn("w-n", n < N_MIN ? "Kamida 100 ta implant. Hisob 100 ta bilan qilindi." : (n > N_MAX ? "Ko'pi bilan 2 000 ta." : ""));
+    var cbct = val("c-cbct", CBCT_MIN);
+    if (cbct < CBCT_MIN) { warn("w-cbct", "Tomograf $40 000 dan kam berilmaydi. Hisob $40 000 bilan qilindi."); cbct = CBCT_MIN; } else warn("w-cbct", "");
+    var fp = floorPrice(nOk);
+    if (chosen === null || chosen < fp) chosen = fp;
+    var price = chosen;
+    var implSum = nOk * price;
+    var total = cbct + implSum;
+    var term = Math.round(Math.min(Math.max(val("c-term", 12), T_MIN), T_MAX));
+    var downMax = total - term;
+    var down = val("c-down", 18000);
+    var dmsg = "";
+    if (down < DOWN_MIN) { dmsg = "Boshlang'ich to'lov kamida $10 000. Hisob $10 000 bilan qilindi."; down = DOWN_MIN; }
+    else if (down > downMax) { dmsg = "Boshlang'ich paket narxidan oshib ketdi."; down = downMax; }
+    warn("w-down", dmsg);
+    var rest = total - down;
+    var mon = Math.ceil(rest / term);
+    var last = rest - mon * (term - 1);
+    return { n: nOk, cbct: cbct, price: price, fp: fp, implSum: implSum, total: total, term: term, down: down, rest: rest, mon: mon, last: last, downMax: downMax };
+  }
+
+  function render() {
+    var s = state();
+    btns.forEach(function (b) {
+      var p = +b.getAttribute("data-price");
+      b.disabled = p < s.fp;
+      b.setAttribute("aria-pressed", String(p === s.price));
+    });
+    var dr = el("c-down-r"); dr.max = String(Math.max(DOWN_MIN, Math.floor(s.downMax / 500) * 500));
+    set("down-max-lbl", "$" + sp(+dr.max));
+
+    el("s-total").innerHTML = "<sup>$</sup>" + sp(s.total);
+    var dp = Math.round(s.down / s.total * 100);
+    el("s-bar-d").style.width = dp + "%"; el("s-bar-r").style.width = (100 - dp) + "%";
+    set("s-down", usd(s.down));
+    set("s-mon", usd(s.mon));
+    set("s-mon-l", "oyiga × " + s.term + " oy");
+    set("s-impl", sp(s.n) + " ta × $" + s.price);
+    set("s-last", usd(s.last));
+    set("s-ipm", "~" + Math.round(s.n / s.term) + " ta");
+    if (el("c-cbct")) set("s-cbct", usd(s.cbct));
+    var half = Math.floor(s.term / 2);
+    el("s-gift").innerHTML = "<b>" + half + "-oygacha</b> to'liq yopsangiz, <b>5 ta DXL implant</b> sovg'a.";
+
+    renderSchedule(s);
+
+    // ROI
+    var rate = val("r-rate", 12000) || 12000;
+    var scans = Math.max(0, val("r-ctday", 0)) * Math.max(0, val("r-days", 0));
+    var scanUsd = scans * Math.max(0, val("r-ctprice", 0)) / rate;
+    var lostPat = Math.max(0, val("r-pat", 0)) * Math.min(Math.max(val("r-lost", 0), 0), 100) / 100;
+    var per = Math.max(0, val("r-per", 0)), prof = Math.max(0, val("r-profit", 0));
+    var retUsd = lostPat * per * prof;
+    var gain = scanUsd + retUsd;
+    var implSave = s.n * (LIST - s.price);
+    var erp = ERP_CONNECT_SOM / rate + s.term * ERP_MONTH_SOM / rate;
+    var save = implSave + erp;
+    var net = gain - s.mon;
+    set("o-gain", usd(gain));
+    set("o-gain-som", sp(gain * rate) + " so'm");
+    set("o-scan", usd(scanUsd));
+    set("o-ret", usd(retUsd));
+    var pat = Math.max(0, val("r-pat", 0)), lostPct = Math.min(Math.max(val("r-lost", 0), 0), 100);
+    set("o-scan-note", "Tomografiya: " + fmt(val("r-ctday", 0)) + " bemor \u00D7 " + fmt(val("r-days", 0)) + " kun \u00D7 " + fmt(val("r-ctprice", 0)) + " so'm.");
+    set("o-ret-note", "Sizda qoladigan bemorlar: " + fmt(pat) + " bemorning " + lostPct + " foizi = " + String(Math.round(lostPat * 10) / 10).replace(".", ",") + " bemor \u00D7 " + per + " implant \u00D7 $" + prof + ".");
+    set("o-impl-l", "Implant $" + s.price + " ($50 o'rniga)");
+    set("o-impl", usd(implSave));
+    set("o-erp", usd(erp));
+    set("o-save", usd(save));
+    set("o-pat", sp(scans) + " bemor/oy");
+    set("o-pay", usd(s.mon));
+    set("o-net", usd(net, true)); el("o-net").classList.toggle("neg", net < 0);
+    set("o-after", usd(gain, true));
+    set("o-back", gain > 0 ? Math.ceil(s.total / gain) + " oyda" : "—");
+    set("o-lose", usd(save));
+    set("o-lose-m", usd(gain));
+
+  }
+
+  btns.forEach(function (b) {
+    b.addEventListener("click", function () { chosen = +b.getAttribute("data-price"); render(); });
+  });
+  pair("c-n", "c-n-r", function () { chosen = null; render(); });
+  pair("c-down", "c-down-r", render);
+  pair("c-term", "c-term-r", render);
+  ["cfg", "roi"].forEach(function (id) {
+    var f = el(id); if (!f) return;
+    f.addEventListener("input", render);
+    f.addEventListener("submit", function (e) { e.preventDefault(); });
+  });
+  // ---------- Schedule + contract PDF ----------
+  var lastState = null;
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function dstr(d) { return pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear(); }
+  function addMonths(d, k) { var x = new Date(d.getFullYear(), d.getMonth() + k, 1); var last = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate(); x.setDate(Math.min(d.getDate(), last)); return x; }
+  function schedule(s) {
+    var today = new Date(), rows = [], left = s.total - s.down;
+    rows.push({ label: "Boshlang'ich", date: today, sum: s.down, left: left });
+    for (var m = 1; m <= s.term; m++) {
+      var sum = m === s.term ? s.last : s.mon; left -= sum;
+      rows.push({ label: m + "-oy", date: addMonths(today, m), sum: sum, left: left });
+    }
+    return rows;
+  }
+  // Ekranda yil 2 xonali — 4 ustun 360px telefonga aylantirmasdan sig'ishi uchun
+  function dshort(d) { return pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + String(d.getFullYear()).slice(2); }
+  function renderSchedule(s) {
+    lastState = s;
+    var rows = schedule(s);
+    el("k-rows").innerHTML = rows.map(function (r, i) {
+      return "<tr><td>" + (i === 0 ? "Boshida" : r.label) + "</td><td>" + dshort(r.date) + "</td><td>" + usd(r.sum) + "</td><td>" + usd(Math.max(0, r.left)) + "</td></tr>";
+    }).join("") + "<tr class=\"last\"><td>Jami</td><td></td><td>" + usd(s.total) + "</td><td>$0</td></tr>";
+    // Ustun balandligi = shu to'lovgacha qolgan qarz; to'q qismi — shu oyda to'lanadigani
+    // .chart balandligi (150px) = ustun (CHART_PX) + oraliq + yorliq
+    var CHART_PX = 130, before = s.total, step = rows.length > 12 ? 2 : 1;
+    el("k-chart").innerHTML = rows.map(function (r, i) {
+      var h = before / s.total * 100, ph = r.sum / s.total * 100, lh = Math.max(0, r.left) / s.total * 100;
+      before = Math.max(0, r.left);
+      var lbl = i === 0 ? "0" : (i % step === 0 || i === rows.length - 1 ? String(i) : "");
+      return "<div class=\"col\" title=\"" + r.label + ": " + usd(r.sum) + "\"><div class=\"stk\" style=\"height:" + (h * CHART_PX / 100).toFixed(1) + "px\"><i class=\"p\" style=\"height:" + (ph / h * 100).toFixed(1) + "%\"></i><i class=\"l\" style=\"height:" + (lh / h * 100).toFixed(1) + "%\"></i></div><span class=\"lbl\">" + lbl + "</span></div>";
+    }).join("");
+    set("gr-sub", "Boshida " + usd(s.down) + ", keyin " + (s.term - 1) + " oy " + usd(s.mon) + " dan, oxirgi oy " + usd(s.last) + ". Shartni o'zgartirsangiz, grafik ham o'zgaradi.");
+  }
+  function msg(t, cls) { var e = el("k-msg"); e.textContent = t; e.className = "ct-msg" + (cls ? " " + cls : ""); }
+  function ascii(t) { return String(t).replace(/[‘’ʻʼ`]/g, "'").replace(/[–—]/g, "-").replace(/×/g, "x").replace(/[^\x20-\x7E\n]/g, ""); }
+  function money(n) { return "$" + Math.round(n).toLocaleString("en-US").replace(/,/g, " "); }
+
+  var pdfLib = null;
+  function loadPdfLib() {
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise(function (ok, fail) {
+      var sc = document.createElement("script");
+      sc.src = "/finscan/f/jspdf.umd.min.js";
+      sc.onload = function () { ok(); };
+      sc.onerror = function () { pdfLib = null; fail(new Error("nolib")); };
+      document.head.appendChild(sc);
+    });
+    return pdfLib;
+  }
+
+  // Telegram ichidagi brauzer blob faylni yuklab ololmaydi — PDF serverga
+  // vaqtincha qo'yiladi va oddiy havola orqali beriladi
+  function uploadPdf(blob, fname) {
+    return fetch("/finscan/pdf?name=" + encodeURIComponent(fname), {
+      method: "POST", headers: { "Content-Type": "application/pdf" }, body: blob
+    }).then(function (r) { if (!r.ok) throw new Error("upload"); return r.json(); })
+      .then(function (j) { return j.url; });
+  }
+
+  function buildPdf(s, k) {
+    var jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!jsPDF) throw new Error("nolib");
+    var doc = new jsPDF({ unit: "mm", format: "a4" });
+    var W = 210, L = 18, R = 192, y = 18, now = new Date();
+    var no = "FS-" + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes());
+    function need(h) { if (y + h > 280) { doc.addPage(); y = 18; } }
+    function text(t, size, style, color, gap) {
+      size = size || 10;
+      doc.setFont("helvetica", style || "normal"); doc.setFontSize(size || 10); doc.setTextColor(color || "#0C2230");
+      var lines = doc.splitTextToSize(ascii(t), R - L);
+      lines.forEach(function (ln) { need(size * 0.45); doc.text(ln, L, y); y += size * 0.45; });
+      y += (gap == null ? 1.5 : gap);
+    }
+    function head(t) { y += 2; text(t, 11, "bold", "#0B7A75", 1); }
+
+    text("SHARTNOMA No. " + no, 15, "bold", "#0C2230", 1);
+    text("FinScan 360 tomografi va DXL implantlarni bo'lib to'lash sharti bilan yetkazib berish to'g'risida", 10, "normal", "#55696F", 1);
+    text("Urganch sh.                                                                                                   " + dstr(now), 10, "normal", "#0C2230", 3);
+
+    head("Tomonlar");
+    text("Yetkazib beruvchi: Rustamov O'rinboy (keyingi o'rinlarda Yetkazib beruvchi).");
+    text("Buyurtmachi: " + k.name + (k.head ? ", rahbar " + k.head : "") + (k.phone ? ", tel. " + k.phone : "") + (k.addr ? ", manzil: " + k.addr : "") + " (keyingi o'rinlarda Buyurtmachi).");
+
+    head("1. Shartnoma predmeti");
+    text("Yetkazib beruvchi Buyurtmachiga FinScan 360 konus-nurli kompyuter tomografini (kompyuter, montaj va o'qitish bilan) hamda " + s.n.toLocaleString("en-US").replace(/,/g, " ") + " dona DXL dental implantni yetkazib beradi. Buyurtmachi ularni ushbu shartnomadagi grafik asosida to'laydi.");
+
+    head("2. Narx va to'lov");
+    text("Paket narxi: " + money(s.total) + " (ustamasiz). Shundan DXL implantlar: " + s.n + " dona x $" + s.price + " = " + money(s.implSum) + ".");
+    text("Boshlang'ich to'lov: " + money(s.down) + ". Qolgan " + money(s.total - s.down) + " " + s.term + " oy davomida to'lanadi: oyiga " + money(s.mon) + ", oxirgi oy " + money(s.last) + ".");
+    text("Narxlar AQSh dollarida. To'lov to'lov kunidagi kurs bo'yicha so'mda amalga oshiriladi.");
+
+    head("3. To'lov grafigi");
+    var cols = [L, L + 34, L + 80, L + 130];
+    need(8);
+    doc.setFillColor("#DCEFEE"); doc.rect(L, y - 4, R - L, 6.5, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor("#0C2230");
+    ["To'lov", "Taxminiy sana", "Summa", "Qoldiq"].forEach(function (h, i) { doc.text(ascii(h), cols[i] + 2, y); });
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    schedule(s).forEach(function (r, i) {
+      need(6);
+      if (i % 2 === 1) { doc.setFillColor("#F1F5F5"); doc.rect(L, y - 4, R - L, 6, "F"); }
+      doc.setTextColor("#0C2230");
+      doc.text(ascii(r.label), cols[0] + 2, y); doc.text(dstr(r.date), cols[1] + 2, y);
+      doc.text(money(r.sum), cols[2] + 2, y); doc.text(money(Math.max(0, r.left)), cols[3] + 2, y);
+      y += 6;
+    });
+    doc.setFont("helvetica", "bold");
+    need(6); doc.text("Jami", cols[0] + 2, y); doc.text(money(s.total), cols[2] + 2, y); y += 4;
+    text("Sanalar taxminiy: aniq sana tomograf o'rnatilgan kundan hisoblanadi.", 8, "normal", "#55696F", 2);
+
+    head("4. Shartlar");
+    [
+      "4.1. Oylik to'lov summasi butun muddat davomida o'zgarmaydi. To'lovni kechiktirish taqiqlanadi.",
+      "4.2. To'lov 10 (o'n) kundan ortiq kechiksa, tomograf ishlab chiqaruvchi (Xitoy) tomonidan onlayn bloklanadi. To'lov to'liq qilingach, blok ochiladi.",
+      "4.3. DXL implantlar oyma-oy, Buyurtmachining ehtiyojiga qarab, to'lov muddati ichida beriladi.",
+      "4.4. Tomograf Buyurtmachi (klinika) nomiga rasmiylashtiriladi.",
+      "4.5. Servis 1,5 yil bepul: chaqiruv o'sha kuni, Xorazm viloyati ichida.",
+      "4.6. Lamina ERP: ulanish va to'lov muddati davomida oylik to'lov bepul.",
+      "4.7. Buyurtmachi to'lovni " + Math.floor(s.term / 2) + "-oygacha to'liq yopsa, 5 dona DXL implant sovg'a qilinadi.",
+      "4.8. Tomogramma o'qish va implant rejalashtirish bo'yicha o'qitish bepul."
+    ].forEach(function (t) { text(t, 9.5, "normal", "#0C2230", 1.2); });
+
+    need(40); y += 6;
+    doc.setDrawColor("#D3DFE0"); doc.line(L, y, R, y); y += 7;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor("#0C2230");
+    doc.text("Yetkazib beruvchi", L, y); doc.text("Buyurtmachi", 112, y); y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text("Rustamov O'rinboy", L, y);
+    var kl = doc.splitTextToSize(ascii(k.name), 80); doc.text(kl, 112, y); y += 5 * kl.length;
+    if (k.head) { doc.text(ascii(k.head), 112, y); y += 5; }
+    y += 8;
+    doc.text("Imzo: ____________________", L, y); doc.text("Imzo: ____________________", 112, y); y += 6;
+    doc.text("M.O'.", 112, y); y += 8;
+
+    // small print: calculator usage
+    var g = function (id) { var e = el(id); return e ? e.textContent.trim() : ""; };
+    var log = "Kalkulyator ma'lumotlari: implant " + s.n + " dona, narx $" + s.price + (s.price > s.fp ? " (qo'lda tanlangan, minimal $" + s.fp + ")" : "") +
+      "; boshlang'ich " + money(s.down) + "; muddat " + s.term + " oy. Klinika hisobi: CBCT narxi " + fmt(val("r-ctprice", 0)) + " so'm; kuniga " + fmt(val("r-ctday", 0)) +
+      " ta; oyiga " + fmt(val("r-days", 0)) + " ish kuni; oyiga implant bemorlari " + fmt(val("r-pat", 0)) + "; qaytmaydigan " + fmt(val("r-lost", 0)) +
+      "%; bemorga " + fmt(val("r-per", 0)) + " implant; implant foydasi $" + fmt(val("r-profit", 0)) + "; kurs " + fmt(val("r-rate", 0)) +
+      " so'm. Natija: oyiga qo'shimcha daromad " + ascii(g("o-gain")) + ", to'lov paytida qoladi " + ascii(g("o-net")) + ", paket " + ascii(g("o-back")) + " o'zini oqlaydi. Tayyorlangan: " + dstr(now) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ".";
+    text("Ushbu hujjat kalkulyator orqali tayyorlangan shartnoma loyihasi. Ikki tomon imzolaguncha kuchga kirmaydi.", 7.5, "italic", "#55696F", 1);
+    text(log, 6.5, "normal", "#8A9A9F", 0);
+    return { doc: doc, no: no };
+  }
+
+  function clinic() {
+    return { name: el("k-name").value.trim(), head: el("k-head").value.trim(), phone: el("k-phone").value.trim(), addr: el("k-addr").value.trim() };
+  }
+  async function makePdf(k) {
+    await loadPdfLib();
+    var r = buildPdf(lastState || state(), k);
+    var safe = ascii(k.name).replace(/[^A-Za-z0-9 _-]/g, "").trim().replace(/\s+/g, "_") || "klinika";
+    return { doc: r.doc, fname: "Shartnoma_" + safe + "_" + r.no + ".pdf", blob: r.doc.output("blob") };
+  }
+
+  // Havoladagi ?a= — ulashgan agent; ariza aynan unga boradi
+  var agentId = (function () { var m = /[?&]a=(\d{1,9})(?:&|$)/.exec(location.search); return m ? +m[1] : null; })();
+
+  el("k-send").addEventListener("click", async function () {
+    var k = clinic();
+    if (!k.name) { msg("Klinika nomi yoki vrach ismini yozing.", "err"); el("k-name").focus(); return; }
+    if (k.phone.replace(/\D/g, "").length < 7) { msg("Telefon raqamingizni yozing — agentimiz shu raqamga qo'ng'iroq qiladi.", "err"); el("k-phone").focus(); return; }
+    var btn = el("k-send"); btn.disabled = true; msg("Yuborilmoqda...");
+    var s = lastState || state();
+    var pdf = null;
+    try { var p = await makePdf(k); pdf = p.doc.output("datauristring").split(",")[1]; } catch (x) { pdf = null; }
+    var g = function (id) { var e = el(id); return e ? e.textContent.trim() : ""; };
+    var roi = "oyiga qo'shimcha daromad " + g("o-gain") + ", to'lov paytida qoladi " + g("o-net") + ", paket " + g("o-back") + " o'zini oqlaydi";
+    try {
+      var r = await fetch("/finscan/ariza", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: k.name, head: k.head, phone: k.phone, addr: k.addr, n: s.n, price: s.price, down: Math.round(s.down), term: s.term, agent: agentId, roi: roi, pdf: pdf })
+      });
+      var j = await r.json().catch(function () { return {}; });
+      if (r.status === 429) { msg(j.detail || "Ariza yuborilgan.", "ok"); btn.textContent = "Yuborildi ✓"; return; }
+      if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "");
+      msg("Ariza yuborildi. " + (j.agent ? "Agentimiz " + j.agent : "Agentimiz") + " tez orada qo'ng'iroq qiladi.", "ok");
+      btn.textContent = "Yuborildi ✓";
+    } catch (e) {
+      btn.disabled = false;
+      msg((e && e.message) || "Ariza yuborilmadi. Internetni tekshirib, qayta bosing.", "err");
+    }
+  });
+
+  el("k-dl").addEventListener("click", async function () {
+    var k = clinic();
+    if (!k.name) { msg("Klinika nomi yoki vrach ismini yozing.", "err"); el("k-name").focus(); return; }
+    var btn = el("k-dl"); btn.disabled = true; msg("PDF tayyorlanmoqda...");
+    try {
+      var made = await makePdf(k), fname = made.fname, blob = made.blob;
+      var link = el("k-open"); link.hidden = true;
+      try { made.doc.save(fname); } catch (x) {}
+      msg("PDF yuklab olindi. Ariza yuborish uchun yuqoridagi tugmani bosing.", "ok");
+      try {
+        link.href = await uploadPdf(blob, fname); link.removeAttribute("download"); link.hidden = false;
+      } catch (x) {
+        try { link.href = URL.createObjectURL(blob); link.download = fname; link.hidden = false; } catch (y) {}
+      }
+    } catch (e) {
+      try { console.error("pdf", e && (e.code || e.message), e && e.stack); } catch (x) {}
+      if (e && e.message === "nolib") msg("PDF kutubxonasi yuklanmadi. Internetni tekshirib, qayta urinib ko'ring.", "err");
+      else msg("PDF saqlanmadi. Qayta urinib ko'ring.", "err");
+    } finally { btn.disabled = false; }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("input.fmt"), function (i) {
+    i.addEventListener("blur", function () { var v = parse(i.value); if (isFinite(v)) i.value = fmt(v); });
+  });
+  render();
+})();
+</script>
+
+</body>
+</html>

@@ -29,6 +29,8 @@ type TgWebApp = {
     impactOccurred: (s: string) => void
     notificationOccurred: (t: string) => void
   }
+  openLink?: (url: string) => void
+  openTelegramLink?: (url: string) => void
   showAlert?: (msg: string, cb?: () => void) => void
   showConfirm?: (msg: string, cb?: (ok: boolean) => void) => void
   requestLocation?: unknown
@@ -97,4 +99,17 @@ export function getPosition(): Promise<{ lat: number; lon: number } | null> {
       { enableHighAccuracy: true, timeout: 8000 },
     )
   })
+}
+
+/** Tashqi sahifani Telegram ichidagi brauzerda ochadi (Mini App yopilmaydi). */
+export function openExternal(url: string) {
+  if (tg?.openLink) tg.openLink(url)
+  else window.open(url, '_blank', 'noopener')
+}
+
+/** Telegram'ning «kimga yuborish» oynasi. */
+export function shareToTelegram(url: string, text: string) {
+  const link = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
+  if (tg?.openTelegramLink) tg.openTelegramLink(link)
+  else window.open(link, '_blank', 'noopener')
 }
