@@ -180,6 +180,7 @@ td.neg2 { color: var(--warn); }
 .ct-form .field input { max-width: none; font: 500 16px var(--font-body); }
 .dl { font: 600 16px var(--font-body); color: #FFFFFF; background: var(--accent); border: 0; border-radius: 10px; padding: 14px 16px; cursor: pointer; }
 .dl:hover { filter: brightness(1.08); }
+.dl2 { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); padding: 12px 16px; font-weight: 500; font-size: 15px; }
 .dl:disabled { opacity: .6; cursor: wait; }
 .dl:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .ct-msg { margin: 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
@@ -444,15 +445,16 @@ td.neg2 { color: var(--warn); }
 
   <section class="contract" aria-labelledby="ct-h">
     <div class="sec-head">
-      <h2 class="sec" id="ct-h">Shartnoma</h2>
-      <p>Paketni tanlagach, klinika ma'lumotlarini yozing va shartnoma bilan to'lov grafigini PDF qilib yuklab oling. Shu faylni bizga yuboring.</p>
+      <h2 class="sec" id="ct-h">Ariza yuborish</h2>
+      <p>Ism va telefoningizni yozing, «Ariza yuborish»ni bosing. Tanlagan shartlaringiz va to'lov grafigi bizga o'zi boradi, agentimiz siz bilan bog'lanadi.</p>
     </div>
       <form class="ct-form" id="ct" autocomplete="off">
         <div class="field"><label for="k-name">Klinika nomi yoki vrach ismi *</label><input id="k-name" type="text" placeholder="Masalan: Smile Dent yoki Karimov Alisher"></div>
         <div class="field"><label for="k-head">Rahbar F.I.Sh.</label><input id="k-head" type="text"></div>
-        <div class="field"><label for="k-phone">Telefon</label><input id="k-phone" type="text" inputmode="tel"></div>
+        <div class="field"><label for="k-phone">Telefon *</label><input id="k-phone" type="tel" inputmode="tel" placeholder="+998 90 123 45 67"></div>
         <div class="field"><label for="k-addr">Manzil</label><input id="k-addr" type="text"></div>
-        <button type="button" class="dl" id="k-dl">Shartnoma va grafikni PDF qilib yuklab olish</button>
+        <button type="button" class="dl" id="k-send">Ariza yuborish</button>
+        <button type="button" class="dl dl2" id="k-dl">Shartnoma loyihasini PDF qilib olish</button>
         <p class="ct-msg" id="k-msg" role="status"></p>
         <a class="ct-open" id="k-open" href="#" target="_blank" rel="noopener" hidden>PDF yuklanmadimi? Shu yerni bosing</a>
       </form>
@@ -756,19 +758,54 @@ td.neg2 { color: var(--warn); }
     return { doc: doc, no: no };
   }
 
+  function clinic() {
+    return { name: el("k-name").value.trim(), head: el("k-head").value.trim(), phone: el("k-phone").value.trim(), addr: el("k-addr").value.trim() };
+  }
+  async function makePdf(k) {
+    await loadPdfLib();
+    var r = buildPdf(lastState || state(), k);
+    var safe = ascii(k.name).replace(/[^A-Za-z0-9 _-]/g, "").trim().replace(/\s+/g, "_") || "klinika";
+    return { doc: r.doc, fname: "Shartnoma_" + safe + "_" + r.no + ".pdf", blob: r.doc.output("blob") };
+  }
+
+  // Havoladagi ?a= — ulashgan agent; ariza aynan unga boradi
+  var agentId = (function () { var m = /[?&]a=(\d{1,9})(?:&|$)/.exec(location.search); return m ? +m[1] : null; })();
+
+  el("k-send").addEventListener("click", async function () {
+    var k = clinic();
+    if (!k.name) { msg("Klinika nomi yoki vrach ismini yozing.", "err"); el("k-name").focus(); return; }
+    if (k.phone.replace(/\D/g, "").length < 7) { msg("Telefon raqamingizni yozing — agentimiz shu raqamga qo'ng'iroq qiladi.", "err"); el("k-phone").focus(); return; }
+    var btn = el("k-send"); btn.disabled = true; msg("Yuborilmoqda...");
+    var s = lastState || state();
+    var pdf = null;
+    try { var p = await makePdf(k); pdf = p.doc.output("datauristring").split(",")[1]; } catch (x) { pdf = null; }
+    var g = function (id) { var e = el(id); return e ? e.textContent.trim() : ""; };
+    var roi = "oyiga qo'shimcha daromad " + g("o-gain") + ", to'lov paytida qoladi " + g("o-net") + ", paket " + g("o-back") + " o'zini oqlaydi";
+    try {
+      var r = await fetch("/finscan/ariza", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: k.name, head: k.head, phone: k.phone, addr: k.addr, n: s.n, price: s.price, down: Math.round(s.down), term: s.term, agent: agentId, roi: roi, pdf: pdf })
+      });
+      var j = await r.json().catch(function () { return {}; });
+      if (r.status === 429) { msg(j.detail || "Ariza yuborilgan.", "ok"); btn.textContent = "Yuborildi ✓"; return; }
+      if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "");
+      msg("Ariza yuborildi. " + (j.agent ? "Agentimiz " + j.agent : "Agentimiz") + " tez orada qo'ng'iroq qiladi.", "ok");
+      btn.textContent = "Yuborildi ✓";
+    } catch (e) {
+      btn.disabled = false;
+      msg((e && e.message) || "Ariza yuborilmadi. Internetni tekshirib, qayta bosing.", "err");
+    }
+  });
+
   el("k-dl").addEventListener("click", async function () {
-    var k = { name: el("k-name").value.trim(), head: el("k-head").value.trim(), phone: el("k-phone").value.trim(), addr: el("k-addr").value.trim() };
+    var k = clinic();
     if (!k.name) { msg("Klinika nomi yoki vrach ismini yozing.", "err"); el("k-name").focus(); return; }
     var btn = el("k-dl"); btn.disabled = true; msg("PDF tayyorlanmoqda...");
     try {
-      await loadPdfLib();
-      var r = buildPdf(lastState || state(), k);
-      var safe = ascii(k.name).replace(/[^A-Za-z0-9 _-]/g, "").trim().replace(/\s+/g, "_") || "klinika";
-      var fname = "Shartnoma_" + safe + "_" + r.no + ".pdf";
+      var made = await makePdf(k), fname = made.fname, blob = made.blob;
       var link = el("k-open"); link.hidden = true;
-      var blob = r.doc.output("blob");
-      try { r.doc.save(fname); } catch (x) {}
-      msg("PDF yuklab olindi. Faylni bizga yuboring.", "ok");
+      try { made.doc.save(fname); } catch (x) {}
+      msg("PDF yuklab olindi. Ariza yuborish uchun yuqoridagi tugmani bosing.", "ok");
       try {
         link.href = await uploadPdf(blob, fname); link.removeAttribute("download"); link.hidden = false;
       } catch (x) {

@@ -329,7 +329,7 @@ FINSCAN_CALL = (
 )
 
 
-def finscan_keyboard() -> InlineKeyboardMarkup:
+def finscan_keyboard(agent_id: int | None = None) -> InlineKeyboardMarkup:
     """Ochish + ulashish tugmalari.
 
     Oddiy `url` tugma (web_app emas): vrach tizimda bo'lmasligi mumkin, sahifa
@@ -339,7 +339,7 @@ def finscan_keyboard() -> InlineKeyboardMarkup:
 
     from app.finscan import public_url
 
-    url = public_url()
+    url = public_url(agent_id)
     text = f"FinScan 360 + DXL implant paketi. {FINSCAN_CALL}"
     share = f"https://t.me/share/url?url={quote(url, safe='')}&text={quote(text, safe='')}"
     return InlineKeyboardMarkup(
@@ -352,10 +352,20 @@ def finscan_keyboard() -> InlineKeyboardMarkup:
 
 @router.message(Command("finscan", "tomograf", "paket"))
 async def finscan_command(message: Message) -> None:
+    # Xodim ulashsa havolaga uning belgisi qo'shiladi — vrach arizasi unga boradi
+    async with session_scope() as session:
+        user = (
+            await session.execute(
+                select(User).where(User.telegram_id == message.from_user.id)
+            )
+        ).scalar_one_or_none()
+    agent_id = (
+        user.id if user is not None and user.is_active and user.role is not Role.DOCTOR else None
+    )
     await message.answer(
         "🩻 <b>FinScan 360 + DXL implant</b>\n\n"
         "Tomograf, DXL implant, servis va Lamina ERP bitta paketda, ustamasiz.\n\n"
         f"👉 {FINSCAN_CALL}\n\n"
         "Pastdagi tugma bilan vrachga yuboring — u havolani telefonida ochadi.",
-        reply_markup=finscan_keyboard(),
+        reply_markup=finscan_keyboard(agent_id),
     )

@@ -9,7 +9,7 @@ qulay bo'lishi kerak.
 ## Buyruqlar
 
 ```bash
-.venv/bin/python -m pytest -q          # testlar (hozir 229 ta)
+.venv/bin/python -m pytest -q          # testlar (hozir 253 ta)
 cd web && npm run typecheck && npm run build
 .venv/bin/python -m alembic upgrade head
 ```
@@ -165,6 +165,12 @@ pul raqami darhol o'sishi kerak, dofamin shunda.
 «Vrachga yuborish» orqali ulashadi. Sahifa kodi ham vrachga ochiq, shuning
 uchun unga **tannarx va ichki foyda hech qachon qo'yilmaydi** (testda
 tekshiriladi). Ichki hisob versiyasi repoda yo'q.
+
+Havolada `?a=<user.id>` — kim ulashgani. Vrach «Ariza yuborish»ni bossa
+(`POST /finscan/ariza`) xabar + PDF o'sha xodimga va direktorga botda
+keladi. Paket raqamlari serverda **qayta hisoblanadi**
+(`services/finscan.py` — sahifadagi JS bilan bir xil qoidalar, birini
+o'zgartirsangiz ikkinchisini ham). IP bo'yicha 10 daqiqada 5 ta ariza.
 
 PDF Telegram ichki brauzerida blob sifatida yuklanmaydi — shuning uchun
 `POST /finscan/pdf` 30 daqiqaga xotirada saqlab, oddiy havola beradi.

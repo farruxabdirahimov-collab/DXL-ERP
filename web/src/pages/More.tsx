@@ -6,7 +6,8 @@ import { openExternal, shareToTelegram } from '../lib/telegram'
 import { Card, Row, Screen, Section } from '../components/ui'
 
 // Vrach loginsiz ochadigan sahifa — matn bot /finscan bilan bir xil
-const FINSCAN_URL = `${window.location.origin}/finscan`
+// `?a=` — ulashgan xodim: vrach ariza yuborsa, xabar shu xodimga boradi
+const finscanUrl = (id: number) => `${window.location.origin}/finscan?a=${id}`
 const FINSCAN_TEXT =
   "FinScan 360 + DXL implant paketi. O'zingizga mos shartni va raqamlarni kiriting yoki tanlang va to'lov grafigini ko'ring."
 
@@ -77,13 +78,13 @@ export default function More() {
         <Card>
           <div className="text-[15px] font-semibold">🩻 FinScan 360 + DXL implant</div>
           <div className="mt-1 text-[13px] text-[var(--muted)]">
-            Vrach o‘ziga mos shartni tanlaydi va to‘lov grafigini ko‘radi. Havola loginsiz ochiladi.
+            Vrach o‘ziga mos shartni tanlaydi va to‘lov grafigini ko‘radi. Ariza yuborsa, sizga botda keladi.
           </div>
           <div className="mt-3 flex gap-2">
-            <button className="btn btn-primary flex-1" onClick={() => shareToTelegram(FINSCAN_URL, FINSCAN_TEXT)}>
+            <button className="btn btn-primary flex-1" onClick={() => shareToTelegram(finscanUrl(me.id), FINSCAN_TEXT)}>
               ➤ Vrachga yuborish
             </button>
-            <button className="btn flex-1" onClick={() => openExternal(FINSCAN_URL)}>
+            <button className="btn flex-1" onClick={() => openExternal(finscanUrl(me.id))}>
               Ochish
             </button>
           </div>
