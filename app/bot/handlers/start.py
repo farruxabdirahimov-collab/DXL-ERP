@@ -9,6 +9,8 @@ from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     KeyboardButton,
     Message,
     ReplyKeyboardMarkup,
@@ -313,7 +315,47 @@ async def help_command(message: Message) -> None:
     await message.answer(
         "🦷 <b>DXL ERP yordam</b>\n\n"
         "/start — ilovani ochish\n"
+        "/finscan — FinScan 360 paketi (vrachga yuborish uchun)\n"
         "/id — Telegram ID ni bilish\n\n"
         "Barcha ish ilova ichida bajariladi. Ilovani ochish uchun /start bosing.",
         reply_markup=webapp_button("🦷 DXL ERP ni ochish"),
+    )
+
+
+#: Vrach havolani ochganda ham, ulashilgan xabarda ham shu chaqiriq ko'rinadi
+FINSCAN_CALL = (
+    "O'zingizga mos shartni va raqamlarni kiriting yoki tanlang "
+    "va to'lov grafigini ko'ring."
+)
+
+
+def finscan_keyboard() -> InlineKeyboardMarkup:
+    """Ochish + ulashish tugmalari.
+
+    Oddiy `url` tugma (web_app emas): vrach tizimda bo'lmasligi mumkin, sahifa
+    esa loginsiz ochiladi va PDF'ni brauzer yuklab oladi.
+    """
+    from urllib.parse import quote
+
+    from app.finscan import public_url
+
+    url = public_url()
+    text = f"FinScan 360 + DXL implant paketi. {FINSCAN_CALL}"
+    share = f"https://t.me/share/url?url={quote(url, safe='')}&text={quote(text, safe='')}"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📊 Paketni ochish", url=url)],
+            [InlineKeyboardButton(text="➤ Vrachga yuborish", url=share)],
+        ]
+    )
+
+
+@router.message(Command("finscan", "tomograf", "paket"))
+async def finscan_command(message: Message) -> None:
+    await message.answer(
+        "🩻 <b>FinScan 360 + DXL implant</b>\n\n"
+        "Tomograf, DXL implant, servis va Lamina ERP bitta paketda, ustamasiz.\n\n"
+        f"👉 {FINSCAN_CALL}\n\n"
+        "Pastdagi tugma bilan vrachga yuboring — u havolani telefonida ochadi.",
+        reply_markup=finscan_keyboard(),
     )

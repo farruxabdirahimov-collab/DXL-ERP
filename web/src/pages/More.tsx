@@ -2,7 +2,13 @@ import { useNavigate } from 'react-router-dom'
 import { useCan, useCurrentUser } from '../App'
 import { useFxRate, useTasks } from '../api/hooks'
 import { num } from '../lib/format'
+import { openExternal, shareToTelegram } from '../lib/telegram'
 import { Card, Row, Screen, Section } from '../components/ui'
+
+// Vrach loginsiz ochadigan sahifa — matn bot /finscan bilan bir xil
+const FINSCAN_URL = `${window.location.origin}/finscan`
+const FINSCAN_TEXT =
+  "FinScan 360 + DXL implant paketi. O'zingizga mos shartni va raqamlarni kiriting yoki tanlang va to'lov grafigini ko'ring."
 
 export default function More() {
   const me = useCurrentUser()
@@ -64,6 +70,23 @@ export default function More() {
                 onClick={() => navigate(item.to)}
               />
             ))}
+        </Card>
+      </Section>
+
+      <Section title="Vrachga ko‘rsatish">
+        <Card>
+          <div className="text-[15px] font-semibold">🩻 FinScan 360 + DXL implant</div>
+          <div className="mt-1 text-[13px] text-[var(--muted)]">
+            Vrach o‘ziga mos shartni tanlaydi va to‘lov grafigini ko‘radi. Havola loginsiz ochiladi.
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button className="btn btn-primary flex-1" onClick={() => shareToTelegram(FINSCAN_URL, FINSCAN_TEXT)}>
+              ➤ Vrachga yuborish
+            </button>
+            <button className="btn flex-1" onClick={() => openExternal(FINSCAN_URL)}>
+              Ochish
+            </button>
+          </div>
         </Card>
       </Section>
 

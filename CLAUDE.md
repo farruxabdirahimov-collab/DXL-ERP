@@ -9,7 +9,7 @@ qulay bo'lishi kerak.
 ## Buyruqlar
 
 ```bash
-.venv/bin/python -m pytest -q          # testlar (hozir 201 ta)
+.venv/bin/python -m pytest -q          # testlar (hozir 229 ta)
 cd web && npm run typecheck && npm run build
 .venv/bin/python -m alembic upgrade head
 ```
@@ -157,6 +157,17 @@ ertangi raqam ko'tariladi, oldinda bo'lsa tushadi.
 
 Tashrif qayd etilgach `agent-home` va `kpi` so'rovlari bekor qilinadi —
 pul raqami darhol o'sishi kerak, dofamin shunda.
+
+## FinScan 360 paketi — vrachga ochiq sahifa
+
+`/finscan` — loginsiz ochiladi (`app/finscan.py`, fayllar
+`app/static/finscan/`). Agent botda `/finscan` yoki Mini App → Yana →
+«Vrachga yuborish» orqali ulashadi. Sahifa kodi ham vrachga ochiq, shuning
+uchun unga **tannarx va ichki foyda hech qachon qo'yilmaydi** (testda
+tekshiriladi). Ichki hisob versiyasi repoda yo'q.
+
+PDF Telegram ichki brauzerida blob sifatida yuklanmaydi — shuning uchun
+`POST /finscan/pdf` 30 daqiqaga xotirada saqlab, oddiy havola beradi.
 
 ## Qilinmagan (ataylab)
 

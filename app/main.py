@@ -444,6 +444,12 @@ async def telegram_webhook(
     return JSONResponse({"ok": True})
 
 
+# ------------------------------------------------- Vrachga ochiq sahifalar
+from app import finscan  # noqa: E402
+
+finscan.mount(app)
+
+
 # ------------------------------------------------------------- Mini App (SPA)
 if WEB_DIST.exists():
     assets = WEB_DIST / "assets"
